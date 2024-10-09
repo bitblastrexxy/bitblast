@@ -503,7 +503,7 @@ header button{
         padding: 1rem 1rem;
         background-color: white;
        position: absolute;
-       margin-top: 6rem;
+       margin-top: 7.5rem;
        left: 8%;
         display: flex;
         border-radius: 1rem;
@@ -608,7 +608,7 @@ header button{
     }
     
     .second .second-child2 h1{
-        color: rgba(0, 0, 28, 1);
+        color: #00001c;
         font-size: 35px;
         font-family: "Bungee", sans-serif;
         width: 100%;
