@@ -6,6 +6,7 @@
 body{
     background-color: rgb(1, 0, 23);
     overflow-x: hidden;
+    font-family: "Poppins", sans-serif;
 }
 
 .bungee-regular {
@@ -129,7 +130,7 @@ body{
     .subheader{
         display: flex;
         justify-content: center;
-        gap: 40%;
+        gap: 25%;
         padding: 0.5rem 0rem;
     }
     
@@ -192,6 +193,7 @@ header{
     justify-content: center;
     gap: 60%;
     padding: 1.5rem 0rem;
+    
 }
 
 .logo{
@@ -297,7 +299,7 @@ header button{
         justify-content: center;
         gap: 35%;
         padding: 0.5rem 0rem;
-        margin-top: -1.1rem;
+        
     }
     .hero{
         margin-top: -8rem;
@@ -308,7 +310,7 @@ header button{
         display: flex;
         justify-content: center;
         gap: 5%;
-        margin-top: 8rem;
+        margin-top: 10rem;
         flex-direction: column;
     }
     .hero-content .hero-title{
@@ -354,6 +356,7 @@ header button{
         border-radius: 10rem;
         border-style: solid;
         border-width: 1px;
+        margin-top: 0.5rem;
     }
     .hero .hero-content p{
         color:rgba(248, 198, 104, 1);
@@ -500,7 +503,7 @@ header button{
         padding: 1rem 1rem;
         background-color: white;
        position: absolute;
-       margin-top: 1rem;
+       margin-top: 6rem;
        left: 8%;
         display: flex;
         border-radius: 1rem;
@@ -527,7 +530,8 @@ header button{
         gap: 2rem;
         flex-direction: column;
         box-shadow: 2px 2px 25px rgba(0, 0, 0, 0.115);
-        padding: 1px 0px;
+        padding: 1rem 0.6rem;
+        justify-content: center;
     }
     
     .things-tab .left .images .images-child img{
@@ -580,10 +584,10 @@ header button{
     .second{
         background: url('/images/modern-background-with-geometrical-shapes.jpg') no-repeat center center/cover;
         height: 30vh;
-        padding-top: 49rem;
+        padding-top: 60rem;
         display: flex; 
         flex-direction: column; 
-
+        margin-top: rem;
     }
     
     
