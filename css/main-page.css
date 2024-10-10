@@ -28,13 +28,14 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
 }
 
 /* Body Styling */
 body {
-    font-family: Arial, sans-serif;
+    font-family: "Poppins", sans-serif;
     line-height: 1.6;
-    background: linear-gradient(90deg, rgb(9, 6, 0), rgb(31, 31, 31));
+    background: linear-gradient(90deg, rgb(9, 6, 0), #1f1f1f);
     color: #333;
     height: 100%;
     display: flex;
@@ -46,12 +47,12 @@ body {
     display: flex;
     justify-content: space-between;
     padding: 1rem;
-    margin-top: 1rem;
+    margin-top: 0.2rem;
 }
 
 .header .notification{
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2rem;
+    height: 2rem;
 }
 
 .search{
@@ -61,13 +62,13 @@ body {
 
 .search input{
     height: 2rem;
-    margin-top: 5px;
+    margin-top: 2px;
     width: 80%;
     background-color: transparent;
     border-style: solid;
     border-radius: 30px;
     color: white;
-    padding: 1.5rem;
+    padding: 1.1rem;
     border-style: none;
     background-color: rgba(255, 255, 255, 0.115);
 }
@@ -89,7 +90,7 @@ body {
 
 
 .logo img{
-    width: 2.5rem;
+    width: 2rem;
     border-radius: 20rem;
 }
 
@@ -269,7 +270,7 @@ button img {
     font-weight: bold;
     font-size: 16px;
     background: linear-gradient(to right, rgba(255, 149, 0, 1), rgba(248, 198, 104, 1), rgba(255, 149, 0, 1));
-    padding: 15px 25px;
+    padding: 10px 25px;
     margin-top: 2.5rem;
     border-radius: 5px;
 }
