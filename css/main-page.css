@@ -318,6 +318,7 @@ button img {
     position: relative;
     margin: auto;
     padding: 1.5rem 2rem;
+    text-align: center;
 }
 
 /* Hide all slides by default */
@@ -326,7 +327,7 @@ button img {
 }
 
 img {
-    width: 100%;
+    width: 70%;
     border-radius: 8px;
 }
 
@@ -359,4 +360,24 @@ img {
 
 .active {
     background-color: rgba(255, 149, 0, 1);
+}
+
+.plans{
+    
+}
+
+.plan-line1{
+    display: flex;
+    justify-content: center;
+    gap: 10%;
+}
+
+.plan-line1 .plan{
+    background: linear-gradient(to right, rgba(255, 149, 0, 1), rgb(102, 59, 0), rgba(255, 149, 0, 1));
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.plan-line1 .plan img{
+    width: 90%;
 }
