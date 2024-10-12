@@ -3,28 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="theme-color" content="#1f1f1f">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#1f1f1f">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/forms.css">
     <title>Sign Up - Moniegram</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Jacquarda+Bastarda+9&family=Poppins:ital,wght@0,400;1,300;1,400&display=swap" rel="stylesheet">
     <style>
-        /* Container to hold both forms */
-        
-
-        /* Forms container */
         .form-wrapper {
             display: flex;
-            width: 200%; /* Twice the width to hold both forms */
+            width: 200%; 
             transition: transform 0.5s ease;
         }
 
-        /* Individual form */
         .form-section {
-            width: 50%; /* Each form takes 50% of the space */
+            width: 50%;
             padding: 20px;
             box-sizing: border-box;
         }
 
-        /* Basic styling for the forms */
         input, button {
             width: 100%;
             background-color: rgba(255, 255, 255, 0.161);
@@ -44,7 +44,6 @@
             color: black;
         }
 
-        /* Spinner */
         .spinner {
             display: none;
             border: 8px solid rgba(0, 0, 0, 0.1);
@@ -52,7 +51,7 @@
             border-radius: 50%;
             width: 60px;
             height: 60px;
-            animation: spin 2s linear infinite;
+            animation: spin 1s linear infinite;
             margin: 20px auto;
         }
 
@@ -91,9 +90,7 @@
 <body>
     <div class="container">
         <div class="form-container">
-            <!-- Wrapper that contains both forms -->
             <div class="form-wrapper" id="formWrapper">
-                <!-- Sign-up form -->
                 <div class="form-section">
                     <h2>Sign Up</h2>
                     <form id="signupForm">
@@ -107,13 +104,12 @@
                             <input type="checkbox" id="agreeTerms" required>
                             Agree to Terms
                         </label><br>
-                        <button type="submit">Sign Up</button>
+                        <button type="submit" id="signupButton">Sign Up</button>
+                        <div class="spinner" id="loadingSpinner"></div>
                         <p>If you already have an account, <span class="login-link" id="loginLink">Log in</span></p>
                     </form>
-                    <div class="spinner" id="loadingSpinner"></div>
                 </div>
 
-                <!-- Login form (Initially hidden) -->
                 <div class="form-section">
                     <h2>Log In</h2>
                     <form id="loginForm">
@@ -131,63 +127,61 @@
         const loginLink = document.getElementById('loginLink');
         const signupLink = document.getElementById('signupLink');
         const formWrapper = document.getElementById('formWrapper');
+        const loadingSpinner = document.getElementById('loadingSpinner');
         
-        // Event listener to switch to login form
         loginLink.addEventListener('click', function() {
-            formWrapper.style.transform = 'translateX(-50%)'; // Slide to the login form
+            formWrapper.style.transform = 'translateX(-50%)';
         });
 
-        // Event listener to switch back to sign-up form
         signupLink.addEventListener('click', function() {
-            formWrapper.style.transform = 'translateX(0)'; // Slide back to the sign-up form
+            formWrapper.style.transform = 'translateX(0)';
         });
 
-        // Sign-up form submission
         document.getElementById('signupForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent form submission
-            document.getElementById('loadingSpinner').style.display = 'block'; // Show loading spinner
+    event.preventDefault(); 
+    loadingSpinner.style.display = 'block'; // Show loading spinner
 
-            const fullName = document.getElementById('fullName').value;
-            const email = document.getElementById('email').value;
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const referrer = document.getElementById('referrer').value;
+    const fullName = document.getElementById('fullName').value;
+    const email = document.getElementById('email').value;
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const referrer = document.getElementById('referrer').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
 
-            // Perform validation for password matching
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            if (password !== confirmPassword) {
-                alert("Passwords do not match.");
-                document.getElementById('loadingSpinner').style.display = 'none'; // Hide spinner
-                return;
-            }
+    if (password !== confirmPassword) {
+        alert("Passwords do not match.");
+        loadingSpinner.style.display = 'none'; // Hide spinner
+        return;
+    }
 
-            // Prepare the data to be sent to the backend
-            const data = { fullName, email, username, password, referrer };
+    const data = { fullName, email, username, password, referrer };
 
-            // Send a POST request to the backend
-            fetch('/api/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                alert(data.message); // Display success message
-                window.location.href = "waiting.html"; // Redirect to waiting page
-            })
-            .catch(error => {
-                console.error('There was a problem with the fetch operation:', error);
-                alert('Sign up failed. Please try again.');
-            })
-            .finally(() => {
-                document.getElementById('loadingSpinner').style.display = 'none'; // Hide spinner after processing
-            });
-        });
+    fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const token = data.token; // Extract the token from the server response
+        alert(data.message); 
+        // Use the token in the redirect URL to otp.html
+        window.location.href = `otp.html?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Sign up failed. Please try again.');
+    })
+    .finally(() => {
+        loadingSpinner.style.display = 'none'; // Hide spinner after processing
+    });
+});
+
     </script>
 </body>
 </html>
