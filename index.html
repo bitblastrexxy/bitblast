@@ -2,23 +2,60 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="theme-color" content="  #1f1f1f">
-    <meta name="apple-mobile-web-app-status-bar-style" content="  #1f1f1f">
+    <meta name="theme-color" content="#1f1f1f">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#1f1f1f">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/index.css">
     <title>Moniegram</title>
+    <style>
+       
+
+        /* Center the logo */
+        
+    </style>
 </head>
 <body>
     <div class="body">
         <img src="./images/moniegram logo.png" alt="Moniegram Logo">
     </div>
+    <div class="spinner"></div> <!-- Loading spinner -->
 
     <script>
-        // Function to redirect after 2 seconds
-        setTimeout(function(){
-            window.location.href = "main-page.html"; // URL to redirect to
-        }, 2000); // 2000 milliseconds = 2 seconds
+        window.addEventListener('load', () => {
+            // Display the page for 4 seconds before performing checks
+            setTimeout(function() {
+                // Show the loading spinner
+                document.querySelector('.spinner').style.display = 'block';
+                
+                // Hide the logo
+                document.querySelector('.body').style.display = 'none';
+
+                // Now, perform session check
+                const activeSession = localStorage.getItem('sessionToken');
+                const userEmail = localStorage.getItem('userEmail'); // Retrieve stored email from local storage
+
+                if (activeSession) {
+                    // Redirect to login page with pre-filled email
+                    window.location.href = `login.html?email=${userEmail}`;
+                } else {
+                    // Redirect to signup page
+                    window.location.href = "signup.html";
+                }
+
+            }, 4000); // Delay for 4 seconds
+
+            // Register service worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(registration) {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    }, function(error) {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            }
+        });
     </script>
 </body>
 </html>

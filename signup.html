@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#1f1f1f">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/forms.css">
+    <title>Sign Up - Moniegram</title>
+    <style>
+        /* Container to hold both forms */
+        .form-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Forms container */
+        .form-wrapper {
+            display: flex;
+            width: 200%; /* Twice the width to hold both forms */
+            transition: transform 0.5s ease;
+        }
+
+        /* Individual form */
+        .form-section {
+            width: 50%; /* Each form takes 50% of the space */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Basic styling for the forms */
+        input, button {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.161);
+            padding: 10px;
+            color: white;
+            border-radius: 10px;
+            border-style: none;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));
+            padding: 9px 25px;
+            font-weight: bold;
+            font-size: 12px;
+            border-style: none;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: none;
+            border: 8px solid rgba(0, 0, 0, 0.1);
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .container {
+            background: url(/images/form\ background.png) no-repeat center center/cover;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            height: 600px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h2 {
+            color: rgb(248, 166, 50);
+            margin-bottom: 16px;
+        }
+
+        p {
+            color: rgb(248, 166, 50);
+        }
+
+        .login-link, .signup-link {
+            color: rgb(248, 166, 50);
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.409);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <!-- Wrapper that contains both forms -->
+            <div class="form-wrapper" id="formWrapper">
+                <!-- Sign-up form -->
+                <div class="form-section">
+                    <h2>Sign Up</h2>
+                    <form id="signupForm">
+                        <input type="text" id="fullName" placeholder="Full Name" required>
+                        <input type="email" id="email" placeholder="Email" required>
+                        <input type="text" id="username" placeholder="Username" required>
+                        <input type="password" id="password" placeholder="Password" required>
+                        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                        <input type="text" id="referrer" placeholder="Referred By (Optional)">
+                        <label>
+                            <input type="checkbox" id="agreeTerms" required>
+                            Agree to Terms
+                        </label><br>
+                        <button type="submit">Sign Up</button>
+                        <p>If you already have an account, <span class="login-link" id="loginLink">Log in</span></p>
+                    </form>
+                    <div class="spinner" id="loadingSpinner"></div>
+                </div>
+
+                <!-- Login form (Initially hidden) -->
+                <div class="form-section">
+                    <h2>Log In</h2>
+                    <form id="loginForm">
+                        <input type="email" id="loginEmail" placeholder="Email" required>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                        <button type="submit">Log In</button>
+                        <p>Don’t have an account? <span class="signup-link" id="signupLink">Sign up</span></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loginLink = document.getElementById('loginLink');
+        const signupLink = document.getElementById('signupLink');
+        const formWrapper = document.getElementById('formWrapper');
+        
+        // Event listener to switch to login form
+        loginLink.addEventListener('click', function() {
+            formWrapper.style.transform = 'translateX(-50%)'; // Slide to the login form
+        });
+
+        // Event listener to switch back to sign-up form
+        signupLink.addEventListener('click', function() {
+            formWrapper.style.transform = 'translateX(0)'; // Slide back to the sign-up form
+        });
+
+        // Sign-up form submission
+        document.getElementById('signupForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent form submission
+            document.getElementById('loadingSpinner').style.display = 'block'; // Show loading spinner
+
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const referrer = document.getElementById('referrer').value;
+
+            // Perform validation for password matching
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            if (password !== confirmPassword) {
+                alert("Passwords do not match.");
+                document.getElementById('loadingSpinner').style.display = 'none'; // Hide spinner
+                return;
+            }
+
+            // Prepare the data to be sent to the backend
+            const data = { fullName, email, username, password, referrer };
+
+            // Send a POST request to the backend
+            fetch('/api/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message); // Display success message
+                window.location.href = "waiting.html"; // Redirect to waiting page
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+                alert('Sign up failed. Please try again.');
+            })
+            .finally(() => {
+                document.getElementById('loadingSpinner').style.display = 'none'; // Hide spinner after processing
+            });
+        });
+    </script>
+</body>
+</html>

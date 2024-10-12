@@ -377,16 +377,21 @@ img {
     background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));
     padding: 10px;
     margin-bottom: 20px;
-    height: 10rem;
+    height: 11rem;
+    border-radius: 5px;
 }
 
 .plan-line1 .plan img{
-    width: 80%;
+    width: 90%;
+    height: 100%;
 }
 
 .plan-line1 .plan p{
-    font-size: 10px;
+    font-size: 8px;
     padding: 10px 40px;
     color: black;
     font-weight: bold;
+    background-color: rgba(255, 255, 255, 0.347);
+    margin-top: 5px;
+    border-radius: 10px;
 }
