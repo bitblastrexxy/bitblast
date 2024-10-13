@@ -120,6 +120,22 @@ For the boldest investors, Plan D offers an exceptional 100% ROI, doubling your 
             </div>
         </div>
     </section>
+    <!-- Deposit Overlay -->
+<div id="depositOverlay" class="overlay">
+    <div class="overlay-content">
+        <button id="closeOverlay" class="close-button">X</button>
+        <h3>Deposit Options</h3>
+        <div class="option" id="buyDollarOption">
+            <h3>Buy with local currency</h3>
+            <p>Visa, Mastercard, American Express</p>
+        </div>
+        <div class="option" id="depositCryptoOption">
+            <h3>Deposit Crypto</h3>
+            <p>Already have crypto? Deposit directly.</p>
+        </div>
+    </div>
+</div>
+
 
      <!-- TradingView Widget BEGIN -->
      <section id="market-cap" class="market-section"  style="text-align: center;">
@@ -173,16 +189,83 @@ For the boldest investors, Plan D offers an exceptional 100% ROI, doubling your 
 
 <script src="java.js"></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(function(registration) {
-          console.log('Service Worker registered with scope:', registration.scope);
-        }, function(error) {
-          console.log('Service Worker registration failed:', error);
-        });
-    });
-  }
+    // Register the Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(function(registration) {
+            console.log('Service Worker registered with scope:', registration.scope);
+          })
+          .catch(function(error) {
+            console.log('Service Worker registration failed:', error);
+          });
+      });
+    }
+  
+    // Main script logic
+    document.addEventListener('DOMContentLoaded', () => {
+      const userEmail = localStorage.getItem('userEmail');
+      const toggleBalanceBtn = document.getElementById('toggleBalance');
+      const balanceDisplay = document.getElementById('balance');
+      let actualBalance; // Variable to store actual balance
+  
+      // Fetch user's balance from the server
+      if (userEmail) {
+        fetch(`/api/getBalance?email=${encodeURIComponent(userEmail)}`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Update the balance in the HTML
+            actualBalance = data.balance; // Store actual balance from the response
+            balanceDisplay.textContent = actualBalance ? `$${actualBalance}` : 'No balance available';
+          })
+          .catch(error => {
+            console.error('Error fetching balance:', error);
+          });
+      } else {
+        console.error('User email not found in local storage');
+      }
+  
+      // Toggle balance visibility
+      toggleBalanceBtn.addEventListener('click', () => {
+        if (balanceDisplay.innerText === '*****') {
+          balanceDisplay.innerText = actualBalance ? `$${actualBalance}` : 'No balance available';
+        } else {
+          balanceDisplay.innerText = '*****';
+        }
+      });
+});
+
+
+const depositButton = document.querySelector('.button button');
+const depositOverlay = document.getElementById('depositOverlay');
+const closeOverlayButton = document.getElementById('closeOverlay');
+
+depositButton.addEventListener('click', () => {
+    depositOverlay.classList.add('show'); // Show the overlay with sliding effect
+});
+
+closeOverlayButton.addEventListener('click', () => {
+    depositOverlay.classList.remove('show'); // Hide the overlay
+});
+
+// Handle click events on deposit options
+document.getElementById('buyDollarOption').addEventListener('click', () => {
+    // Specify what happens when "Buy Dollar" is clicked
+    console.log("Buy Dollar option clicked");
+});
+
+document.getElementById('depositCryptoOption').addEventListener('click', () => {
+    // Specify what happens when "Deposit Crypto" is clicked
+    console.log("Deposit Crypto option clicked");
+});
+
+
 </script>
+  
 </body>
 </html>

@@ -389,3 +389,66 @@ img {
     margin-top: 5px;
     border-radius: 10px;
 }
+
+
+.overlay {
+    position: fixed;
+    height: 50vh;
+    bottom: -50vh; /* Start off-screen */
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.927);
+    color: white;
+    padding: 20px;
+    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.5);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    transition: bottom 0.5s ease, opacity 0.5s ease; /* Transition effect for sliding and fading */
+    opacity: 0; /* Start with 0 opacity */
+    pointer-events: none; /* Prevent interaction when hidden */
+}
+
+.overlay.show {
+    bottom: 0; /* Slide into view */
+    opacity: 1; /* Fade in */
+    pointer-events: auto; /* Allow interaction when shown */
+}
+
+.overlay-content {
+    max-width: 500px;
+    margin: auto;
+    text-align: center;
+}
+
+.close-button {
+    background-color: #333;
+    padding: 5px;
+    border-radius: 20rem;
+    border: none;
+    color: rgb(255, 166, 42);
+    font-size: 15px;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-weight: bolder;
+}
+
+.overlay-content h3 {
+    color: rgb(255, 166, 42);
+}
+
+.option {
+    margin: 20px 0;
+    cursor: pointer;
+    text-align: left;
+    background-color: #333;
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 1rem;
+}
+
+.option:hover {
+    text-decoration: underline;
+}
+
