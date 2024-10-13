@@ -35,12 +35,19 @@ app.post('/api/signup', async (req, res) => {
             return res.status(400).json({ message: 'Email already exists' });
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // No password hashing - storing password as plain text for now
+        const plainPassword = password;
 
-        // Insert new user into the database with 'verified' set to false
+        // Debug: Log the password before storing it
+        console.log('Plain text password to be stored:', plainPassword);
+
+        // Insert new user into the database
         await db.query('INSERT INTO users (fullName, email, username, password, referrer, verified) VALUES (?, ?, ?, ?, ?, ?)', 
-            [fullName, email, username, hashedPassword, referrer, false]);
+            [fullName, email, username, plainPassword, referrer, false]);
+
+        // Verify the user was inserted and password saved
+        const insertedUser = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        console.log('Inserted user:', insertedUser[0]);
 
         // Generate OTP and JWT
         const otp = Math.floor(100000 + Math.random() * 900000); // Generates a 6-digit OTP
@@ -71,7 +78,6 @@ app.post('/api/signup', async (req, res) => {
                 return res.status(500).json({ message: 'Failed to send OTP. Please try again.' });
             } else {
                 console.log('Email sent: ' + info.response);
-                // Send the token in the response
                 res.json({ message: 'Signup successful! Please check your email for the OTP.', token });
             }
         });
@@ -80,6 +86,8 @@ app.post('/api/signup', async (req, res) => {
         res.status(500).json({ message: 'Signup failed. Please try again.' });
     }
 });
+
+
 
 
 
@@ -115,27 +123,36 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email and password are required.' });
         }
 
-        const [user] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        // Fetch user from the database
+        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
 
-        // Check if user exists
-        if (!user) {
+        // Ensure the query returns a user
+        if (users.length === 0) {
             console.log('User not found:', email);
             return res.status(400).json({ success: false, message: 'Invalid email or password.' });
         }
 
-        // Log the values to see what you're comparing
-        console.log('User password from DB:', user.password); // Check the stored password
-        console.log('Password from client:', password); // Check the password from client
+        const user = users[0]; // Get the first user object
 
-        // Verify the password against the hashed password
-        const passwordMatch = await bcrypt.compare(password, user.password);
+        // Debugging: Check the fetched user details
+        console.log('Fetched user:', user);
+        console.log('User password from DB:', user.password);
+        console.log('Password from client:', password);
 
-        if (!passwordMatch) {
+        // Check if the password is present in the database
+        if (!user.password) {
+            console.log('User password is missing for email:', email);
+            return res.status(400).json({ success: false, message: 'User password is missing.' });
+        }
+
+        // Directly compare the plain text passwords
+        if (password !== user.password) {
             console.log('Password mismatch for user:', email);
             return res.status(400).json({ success: false, message: 'Invalid email or password.' });
         }
 
         // Successful login
+        console.log('Login successful for user:', email);
         res.json({ success: true, message: 'Login successful!' });
     } catch (error) {
         console.error('Login error:', error);
