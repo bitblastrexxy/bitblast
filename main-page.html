@@ -12,6 +12,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Jacquarda+Bastarda+9&family=Poppins:ital,wght@0,400;1,300;1,400&display=swap" rel="stylesheet">
+
+    
 </head>
 <body>
    
@@ -125,16 +127,28 @@ For the boldest investors, Plan D offers an exceptional 100% ROI, doubling your 
     <div class="overlay-content">
         <button id="closeOverlay" class="close-button">X</button>
         <h3>Deposit Options</h3>
-        <div class="option" id="buyDollarOption">
+        <div class="option" id="localCurrencyButton">
             <h3>Buy with local currency</h3>
             <p>Visa, Mastercard, American Express</p>
         </div>
-        <div class="option" id="depositCryptoOption">
+        <div class="option" id="cryptoButton">
             <h3>Deposit Crypto</h3>
             <p>Already have crypto? Deposit directly.</p>
         </div>
     </div>
 </div>
+
+<!-- Full-Page Overlay for Stripe Elements -->
+<div id="stripeOverlay" class="full-page-overlay">
+    <div class="overlay-content">
+        <button id="closeStripe">Close</button>
+        <h2>Enter Card Details</h2>
+        <!-- Stripe Elements will be rendered here -->
+        <div id="card-element"></div>
+        <button id="submitPayment">Submit Payment</button>
+    </div>
+</div>
+
 
 
      <!-- TradingView Widget BEGIN -->
@@ -186,86 +200,126 @@ For the boldest investors, Plan D offers an exceptional 100% ROI, doubling your 
     <footer>
         <p>&copy; 2024 Moniegram. All rights reserved.</p>
     </footer>
-
+    <script src="https://js.stripe.com/v3/"></script>
 <script src="java.js"></script>
 <script>
     // Register the Service Worker
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(function(registration) {
-            console.log('Service Worker registered with scope:', registration.scope);
-          })
-          .catch(function(error) {
-            console.log('Service Worker registration failed:', error);
-          });
-      });
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(function (registration) {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(function (error) {
+                    console.log('Service Worker registration failed:', error);
+                });
+        });
     }
-  
+
     // Main script logic
     document.addEventListener('DOMContentLoaded', () => {
-      const userEmail = localStorage.getItem('userEmail');
-      const toggleBalanceBtn = document.getElementById('toggleBalance');
-      const balanceDisplay = document.getElementById('balance');
-      let actualBalance; // Variable to store actual balance
-  
-      // Fetch user's balance from the server
-      if (userEmail) {
-        fetch(`/api/getBalance?email=${encodeURIComponent(userEmail)}`)
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            return response.json();
-          })
-          .then(data => {
-            // Update the balance in the HTML
-            actualBalance = data.balance; // Store actual balance from the response
-            balanceDisplay.textContent = actualBalance ? `$${actualBalance}` : 'No balance available';
-          })
-          .catch(error => {
-            console.error('Error fetching balance:', error);
-          });
-      } else {
-        console.error('User email not found in local storage');
-      }
-  
-      // Toggle balance visibility
-      toggleBalanceBtn.addEventListener('click', () => {
-        if (balanceDisplay.innerText === '*****') {
-          balanceDisplay.innerText = actualBalance ? `$${actualBalance}` : 'No balance available';
+        const userEmail = localStorage.getItem('userEmail');
+        const toggleBalanceBtn = document.getElementById('toggleBalance');
+        const balanceDisplay = document.getElementById('balance');
+        let actualBalance; // Variable to store actual balance
+
+        // Fetch user's balance from the server
+        if (userEmail) {
+            fetch(`/api/getBalance?email=${encodeURIComponent(userEmail)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update the balance in the HTML
+                    actualBalance = data.balance; // Store actual balance from the response
+                    balanceDisplay.textContent = actualBalance ? `$${actualBalance}` : 'No balance available';
+                })
+                .catch(error => {
+                    console.error('Error fetching balance:', error);
+                });
         } else {
-          balanceDisplay.innerText = '*****';
+            console.error('User email not found in local storage');
         }
-      });
-});
 
+        // Toggle balance visibility
+        toggleBalanceBtn.addEventListener('click', () => {
+            if (balanceDisplay.innerText === '*****') {
+                balanceDisplay.innerText = actualBalance ? `$${actualBalance}` : 'No balance available';
+            } else {
+                balanceDisplay.innerText = '*****';
+            }
+        });
+    });
 
-const depositButton = document.querySelector('.button button');
-const depositOverlay = document.getElementById('depositOverlay');
-const closeOverlayButton = document.getElementById('closeOverlay');
+    // Deposit overlay functionality
+    const depositButton = document.querySelector('.button button');
+    const depositOverlay = document.getElementById('depositOverlay');
+    const closeOverlayButton = document.getElementById('closeOverlay');
 
-depositButton.addEventListener('click', () => {
-    depositOverlay.classList.add('show'); // Show the overlay with sliding effect
-});
+    depositButton.addEventListener('click', () => {
+        depositOverlay.classList.add('show'); // Show the overlay with sliding effect
+    });
 
-closeOverlayButton.addEventListener('click', () => {
-    depositOverlay.classList.remove('show'); // Hide the overlay
-});
+    closeOverlayButton.addEventListener('click', () => {
+        depositOverlay.classList.remove('show'); // Hide the overlay
+    });
 
-// Handle click events on deposit options
-document.getElementById('buyDollarOption').addEventListener('click', () => {
-    // Specify what happens when "Buy Dollar" is clicked
-    console.log("Buy Dollar option clicked");
-});
+    // Handle click events on deposit options
+    document.getElementById('buyDollarOption').addEventListener('click', () => {
+        console.log("Buy Dollar option clicked");
+    });
 
-document.getElementById('depositCryptoOption').addEventListener('click', () => {
-    // Specify what happens when "Deposit Crypto" is clicked
-    console.log("Deposit Crypto option clicked");
-});
+    document.getElementById('depositCryptoOption').addEventListener('click', () => {
+        // Specify what happens when "Deposit Crypto" is clicked
+        console.log("Deposit Crypto option clicked");
+    });
 
+    // Initialize Stripe
+    const stripe = Stripe('pk_test_51Q9WFzJZJDw2RPx7dXthW0Gzwldky3EnllvchMj0dPINTQYrQK2QxKtAy4OkWTCuj75GCWxO9jCeh6ZoR9Mw8pNF00mTCLvXyM'); // Replace with your Stripe public key
+    const elements = stripe.elements();
+    const cardElement = elements.create('card');
+    cardElement.mount('#card-element');
 
+    // Handle payment submission
+    document.getElementById('submit-button').addEventListener('click', async () => {
+        const amount = parseInt(document.getElementById('amountInput').value) * 100; // Convert to cents
+
+        // Call your backend to create a payment intent
+        const response = await fetch('http://localhost:3000/create-payment-intent', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ amount }),
+        });
+
+        const { clientSecret } = await response.json();
+
+        // Confirm the payment
+        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+                card: cardElement,
+            },
+        });
+
+        if (error) {
+            // Show error to your customer
+            console.error(error.message);
+            alert(error.message);
+        } else {
+            // Payment succeeded
+            if (paymentIntent.status === 'succeeded') {
+                console.log('Payment succeeded!');
+                alert('Payment succeeded!');
+                depositOverlay.classList.remove('show'); // Close the overlay after successful payment
+            }
+        }
+    });
 </script>
+
   
 </body>
 </html>
