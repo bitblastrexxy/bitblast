@@ -1,5 +1,4 @@
 // server.js
-
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
@@ -10,6 +9,8 @@ const cors = require('cors');
 const path = require('path');
 
 dotenv.config(); // Load environment variables
+
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 app.use(cors()); // Enable CORS
@@ -162,209 +163,84 @@ app.post('/api/login', async (req, res) => {
 
 
 
+// API route to get user balance
+app.get('/api/getBalance', async (req, res) => {
+    const userEmail = req.query.email;
+
+    if (!userEmail) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+
+    try {
+        const [results] = await db.query('SELECT balance FROM users WHERE email = ?', [userEmail]);
+        
+        if (results.length > 0) {
+            res.json({ balance: results[0].balance });
+        } else {
+            res.json({ balance: null }); // User not found
+        }
+    } catch (error) {
+        console.error('Error fetching balance:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
+app.post('/api/create-payment-intent', async (req, res) => {
+    const { amount } = req.body; // Get amount from request
+
+    try {
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: 'usd', // Change this to your desired currency
+            // Optional: Add more options here if needed
+        });
+        res.send({ clientSecret: paymentIntent.client_secret });
+    } catch (error) {
+        console.error('Error creating payment intent:', error);
+        res.status(500).send({ error: 'Failed to create payment intent.' });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
-
-
-
-
-// const express = require('express');
-// const jwt = require('jsonwebtoken');
-// const path = require('path');
-// const bcrypt = require('bcrypt');
-// const nodemailer = require('nodemailer');
-// const pool = require('./config/db'); // Import the db.js file for MySQL connection
-// const app = express();
-// const PORT = process.env.PORT || 3000;
-
-// app.use(express.json());
-// app.use(express.static(path.join(__dirname))); // Serve static files from the main project folder
-
-// // Replace this with your actual secret from environment variables
-// const SECRET_KEY = process.env.JWT_SECRET || 'moniegram'; // Ensure this is set in your .env file
-
-// // Serve the index.html file
-// app.get('/', (req, res) => {
-//     res.sendFile(path.join(__dirname, 'index.html'));
-// });
-
-// // Set up nodemailer
-// const transporter = nodemailer.createTransport({
-//     service: 'gmail',
-//     auth: {
-//         user: process.env.EMAIL_USER,
-//         pass: process.env.EMAIL_PASS // Use the App Password here
-//     }
-// });
-
-// app.post('/api/signup', async (req, res) => {
-//     const { fullName, email, username, password, referrer } = req.body;
-
-//     try {
-//         const hashedPassword = await bcrypt.hash(password, 10);
-        
-//         // Generate a confirmation token using JWT
-//         const confirmationToken = jwt.sign({ email, username }, SECRET_KEY, { expiresIn: '1h' });
-//         console.log('Generated confirmation token:', confirmationToken); // Debugging line
-
-//         // Store user details in the database
-//         const [result] = await pool.query(
-//             'INSERT INTO users (fullName, email, username, password, referrer, confirmationToken) VALUES (?, ?, ?, ?, ?, ?)',
-//             [fullName, email, username, hashedPassword, referrer, confirmationToken]
-//         );
-
-//         // Send confirmation email
-//         const confirmationLink = `http://localhost:3000/api/verify/${encodeURIComponent(confirmationToken)}`; // Use the appropriate domain for production
-//         const mailOptions = {
-//             from: process.env.EMAIL_USER,
-//             to: email,
-//             subject: 'Please confirm your email',
-//             text: `Click this link to confirm your email: ${confirmationLink}`,
-//         };
-
-//         await transporter.sendMail(mailOptions);
-//         res.status(201).json({ message: 'Sign-up successful! Please check your email to confirm your account.' });
-
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'An error occurred while signing up. Please try again later.' });
-//     }
-// });
-
-
-// // Verification endpoint
-// app.get('/api/verify/:token', async (req, res) => {
-//     const token = req.params.token;
-
-//     console.log('Token received for verification:', token); // Debugging line
-
-//     try {
-//         const decoded = jwt.verify(token, SECRET_KEY);
-//         const userId = decoded.id;
-
-//         // Update user as verified in the database
-//         const [rows] = await pool.query('UPDATE users SET verified = 1 WHERE email = ?', [decoded.email]);
-
-//         if (rows.affectedRows === 0) {
-//             return res.status(400).send({ message: 'User not found or already verified.' });
-//         }
-
-//         res.send({ message: 'Email verified successfully!' });
-//     } catch (error) {
-//         console.error('Token verification error:', error);
-//         res.status(400).send({ message: 'Invalid token.' });
-//     }
-// });
-
-
-// // Start server
-// app.listen(PORT, () => {
-//     console.log(`Server is running on:${PORT}`);
-// });
-
-
-
-
-
-
-
-
-
-// const express = require('express');
-// const jwt = require('jsonwebtoken');
-// const path = require('path');
-// const bcrypt = require('bcrypt');
-// const nodemailer = require('nodemailer');
-// const crypto = require('crypto');
-// const pool = require('./config/db'); // Import the db.js file for MySQL connection
-// const app = express();
-// const PORT = process.env.PORT || 3000;
-
-// app.use(express.json());
-// app.use(express.static(path.join(__dirname))); // Serve static files from the main project folder
-
-// const SECRET_KEY = 'moniegram';
-
-// // Serve the index.html file
-// app.get('/', (req, res) => {
-//     res.sendFile(path.join(__dirname, 'index.html'));
-// });
-
-// // Set up nodemailer
-
-// const transporter = nodemailer.createTransport({
-//     service: 'gmail',
-//     auth: {
-//         user: process.env.EMAIL_USER,
-//         pass: process.env.EMAIL_PASS // Use the App Password here
-//     }
-// });
-
-// module.exports = transporter;
-
-
-// app.get('/api/verify/:token', async (req, res) => {
-//     const token = req.params.token;
-
-//     try {
-//         const decoded = jwt.verify(token, process.env.JWT_SECRET); // Replace with your secret
-//         const userId = decoded.id;
-
-//         // Update user as verified in the database
-//         const [rows] = await db.execute('UPDATE users SET verified = 1 WHERE id = ?', [userId]);
-
-//         if (rows.affectedRows === 0) {
-//             return res.status(400).send({ message: 'User not found or already verified.' });
-//         }
-
-//         res.send({ message: 'Email verified successfully!' });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(400).send({ message: 'Invalid token.' });
-//     }
-// });
-
-
-// // Sign-up route
-// app.post('/api/signup', async (req, res) => {
-//     const { fullName, email, username, password, referrer } = req.body;
-
-//     try {
-//         // Hash the password
-//         const hashedPassword = await bcrypt.hash(password, 10);
-        
-//         // Generate a confirmation token
-//         const confirmationToken = crypto.randomBytes(32).toString('hex');
-
-//         // Store user details in the database using the connection from db.js
-//         const [result] = await pool.query(
-//             'INSERT INTO users (fullName, email, username, password, referrer, confirmationToken) VALUES (?, ?, ?, ?, ?, ?)',
-//             [fullName, email, username, hashedPassword, referrer, confirmationToken]
-//         );
-
-//         // Send confirmation email
-//         const confirmationLink = `http://yourdomain.com/confirm?token=${confirmationToken}`;
-//         const mailOptions = {
-//             from: 'your_email@gmail.com',
-//             to: email,
-//             subject: 'Please confirm your email',
-//             text: `Click this link to confirm your email: ${confirmationLink}`,
-//         };
-
-//         await transporter.sendMail(mailOptions);
-//         res.status(201).json({ message: 'Sign-up successful! Please check your email to confirm your account.' });
-
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'An error occurred while signing up. Please try again later.' });
-//     }
-// });
-
-// // Start server
-// app.listen(PORT, () => {
-//     console.log(`Server is running on:${PORT}`);
-// });
