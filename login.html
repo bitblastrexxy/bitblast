@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#1f1f1f">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#1f1f1f">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/forms.css">
+    <title>Log In - Moniegram</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Jacquarda+Bastarda+9&family=Poppins:ital,wght@0,400;1,300;1,400&display=swap" rel="stylesheet">
+    <style>
+        .form-wrapper {
+            display: flex;
+            width: 200%; 
+            transition: transform 0.5s ease;
+        }
+
+        .form-section {
+            width: 50%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        input, button {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.161);
+            padding: 10px;
+            color: black;
+            border-radius: 10px;
+            border-style: none;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));
+            padding: 9px 25px;
+            font-weight: bold;
+            font-size: 12px;
+            border-style: none;
+            color: black;
+        }
+
+        .spinner {
+            display: none;
+            border: 8px solid rgba(0, 0, 0, 0.1);
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .container {
+            background: url(/images/form\ background.png) no-repeat center center/cover;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            height: 600px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h2 {
+            color: rgb(248, 166, 50);
+            margin-bottom: 16px;
+        }
+
+        p {
+            color: rgb(248, 166, 50);
+            font-size: 13px;
+        }
+
+        .login-link, .signup-link {
+            color: rgb(255, 255, 255);
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <div class="form-wrapper" id="formWrapper">
+                <div class="form-section">
+                    <h2>Log In</h2>
+                    <form id="loginForm">
+                        <input type="email" id="loginEmail" placeholder="Email" required>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                        <button type="submit">Log In</button>
+                        <div class="spinner" id="loadingSpinner"></div>
+                        <p>Don’t have an account? <span class="signup-link" id="signupLink">Sign up</span></p>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <h2>Sign Up</h2>
+                    <form id="signupForm">
+                        <input type="text" id="fullName" placeholder="Full Name" required>
+                        <input type="email" id="email" placeholder="Email" required>
+                        <input type="text" id="username" placeholder="Username" required>
+                        <input type="password" id="password" placeholder="Password" required>
+                        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                        <input type="text" id="referrer" placeholder="Referred By (Optional)">
+                        <label>
+                            <input type="checkbox" id="agreeTerms" required>
+                            Agree to Terms
+                        </label><br>
+                        <button type="submit" id="signupButton">Sign Up</button>
+                        <div class="spinner" id="signupLoadingSpinner"></div>
+                        <p>If you already have an account, <span class="login-link" id="loginLink">Log in</span></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loginLink = document.getElementById('loginLink');
+        const signupLink = document.getElementById('signupLink');
+        const formWrapper = document.getElementById('formWrapper');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const signupLoadingSpinner = document.getElementById('signupLoadingSpinner');
+
+        // Pre-fill email if present in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email');
+        if (email) {
+            document.getElementById('loginEmail').value = email;
+        }
+
+       // Handle login form submission
+document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    loadingSpinner.style.display = 'block'; // Show loading spinner
+
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    const data = { email, password };
+
+    fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const userId = data.userId; // Extract the user ID from the server response
+            // alert(data.message);
+            // Store the user's ID
+            localStorage.setItem('userEmail', email); // Store the user's email
+            // Redirect to the dashboard or a specific page after successful login
+            window.location.href = 'main-page.html';
+        } else {
+            alert(data.message); // Displaying the server's error message
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Login failed. Please try again.');
+    })
+    .finally(() => {
+        loadingSpinner.style.display = 'none'; // Hide spinner after processing
+    });
+});
+
+
+        // Handle signup form submission
+        document.getElementById('signupForm').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+            signupLoadingSpinner.style.display = 'block'; // Show loading spinner
+
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const referrer = document.getElementById('referrer').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                alert("Passwords do not match.");
+                signupLoadingSpinner.style.display = 'none'; // Hide spinner
+                return;
+            }
+
+            const data = { fullName, email, username, password, referrer };
+
+            fetch('/api/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message);
+                // Redirect to a confirmation or login page after successful signup
+                window.location.href = `otp.html?email=${encodeURIComponent(email)}`;
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                alert('Sign up failed. Please try again.');
+            })
+            .finally(() => {
+                signupLoadingSpinner.style.display = 'none'; // Hide spinner after processing
+            });
+        });
+
+        loginLink.addEventListener('click', function() {
+            formWrapper.style.transform = 'translateX(0)';
+        });
+
+        signupLink.addEventListener('click', function() {
+            formWrapper.style.transform = 'translateX(-50%)';
+        });
+    </script>
+</body>
+</html>

@@ -144,38 +144,49 @@
         });
     </script>
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
+        // Handle login form submission
+document.getElementById('loginForm').addEventListener('submit', function(event) {
     event.preventDefault();
-    
+    loadingSpinner.style.display = 'block'; // Show loading spinner
+
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
 
-    // Show loading spinner
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    loadingSpinner.style.display = 'inline';
+    const data = { email, password };
 
     fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(data),
     })
     .then(response => {
-        loadingSpinner.style.display = 'none'; // Hide loading spinner regardless of response
-        return response.json(); // Move this line up for better readability
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
     })
     .then(data => {
         if (data.success) {
-            window.location.href = "main-page.html"; // Successful login, redirect
+            const userId = data.userId; // Extract the user ID from the server response
+            alert(data.message);
+           // Store the user's ID
+            localStorage.setItem('userEmail', email); // Store the user's email
+            // Redirect to the dashboard or a specific page after successful login
+            window.location.href = 'main-page.html';
         } else {
             alert(data.message); // Displaying the server's error message
         }
     })
     .catch(error => {
-        console.error('Error during login:', error);
-        loadingSpinner.style.display = 'none'; // Hide loading spinner on error
+        console.error('Fetch error:', error);
+        alert('Login failed. Please try again.');
+    })
+    .finally(() => {
+        loadingSpinner.style.display = 'none'; // Hide spinner after processing
     });
 });
 
     </script>
+    
 </body>
 </html>
