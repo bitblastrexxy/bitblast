@@ -204,25 +204,80 @@ app.post('/api/create-payment-intent', async (req, res) => {
 });
 
 
+app.post('/api/create-deposit', async (req, res) => {
+    const { email, amount, deposit_method } = req.body; // Ensure deposit_method is used here
 
-router.get('/api/deposit-history', async (req, res) => {
-    const userEmail = req.query.email; // You can pass email as a query parameter
-    
+    if (!email || !amount || !deposit_method) {
+        return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const investmentStartDate = new Date(); // Current date for investment start
+    const investmentEndDate = null; // Set to null for now, will calculate later
+
     try {
-        const results = await db.query(`
-            SELECT date, deposit_method, amount, status
-            FROM deposits
-            WHERE email = ? ORDER BY date DESC
-        `, [userEmail]);
+        // Insert into deposits table
+        const depositResult = await db.query(
+            'INSERT INTO deposits (email, amount, date, status, investment_start_date, investment_end_date, plan_name, deposit_method) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?)',
+            [email, amount, 'pending', investmentStartDate, investmentEndDate, null, deposit_method] // Plan name is null
+        );
 
-        res.json(results);
+        // Insert into transactions table
+        const transactionResult = await db.query(
+            'INSERT INTO transactions (email, plan_name, plan_profit, plan_principle_return, plan_credit_amount, plan_deposit_fee, plan_debit_amount, deposit_method, transaction_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+            [email, null, null, null, amount, 0, amount, deposit_method] // Nulls for plan details, adjust if necessary
+        );
+
+        res.status(201).json({ message: 'Deposit created successfully', depositId: depositResult.insertId });
     } catch (error) {
-        console.error('Error fetching deposit history:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error creating deposit:', error);
+        res.status(500).json({ message: 'Error creating deposit', error });
     }
 });
 
-module.exports = router;
+
+
+// Assuming you are using Express and have already set up your server
+// app.post('/api/create-deposit', async (req, res) => {
+//     const { email, amount, deposit_method } = req.body; // Ensure deposit_method is used here
+
+//     if (!email || !amount || !deposit_method) {
+//         return res.status(400).json({ message: 'Missing required fields' });
+//     }
+
+//     const investmentStartDate = new Date(); // Current date for investment start
+//     const investmentEndDate = null; // Set to null for now, will calculate later
+
+//     try {
+//         const result = await db.query(
+//             'INSERT INTO deposits (email, amount, date, status, investment_start_date, investment_end_date, plan_name, deposit_method) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?)',
+//             [email, amount, 'pending', investmentStartDate, investmentEndDate, null, deposit_method] // Plan name is null
+//         );
+
+//         res.status(201).json({ message: 'Deposit created successfully', depositId: result.insertId });
+//     } catch (error) {
+//         console.error('Error creating deposit:', error);
+//         res.status(500).json({ message: 'Error creating deposit', error });
+//     }
+// });
+
+
+// Route for fetching deposit history
+app.get('/api/deposit-history', async (req, res) => {
+    const userEmail = req.headers['x-user-email']; // Assuming you're passing user email in headers
+
+    if (!userEmail) {
+        return res.status(400).json({ error: 'Invalid input' });
+    }
+
+    try {
+        const history = await getDepositHistory(userEmail);
+        return res.status(200).json(history);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Failed to fetch deposit history' });
+    }
+});
+
 
 
 

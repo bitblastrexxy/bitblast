@@ -32,18 +32,40 @@
             </select>
         </div>
 
+
         <!-- Wallet Address Display -->
         <div class="wallet-address-section">
             <h3>Your Wallet Address ></h3>
             <p id="walletAddress">bc1qexampleaddressxyz12345</p> <!-- Placeholder address -->
-            <button id="copyWalletAddress" style="padding: 5px 10px;
-    background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));">Copy Address</button>
+            <button id="copyWalletAddress" style="padding: 5px 10px; background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));">Copy Address</button>
         </div>
 
         <!-- QR Code Display -->
         <div class="qr-code-section">
             <h3>QR Code ></h3>
             <img src="./images/qr code for btc.png" alt="QR Code" id="qrCode"> 
+        </div>
+
+        <!-- Amount Input Section -->
+        <div class="amount-section">
+            <label for="cryptoAmount">Enter Amount (USD)</label><br>
+            <input type="number" id="cryptoAmount" placeholder="Enter amount in USD">
+        </div>
+
+        <!-- Deposit Button -->
+        <div class="deposit-action">
+            <button id="initiateDeposit">Deposit</button>
+        </div>
+
+        <!-- Confirmation Slide-in Page -->
+        <div id="confirmationSlide" class="confirmation-slide" style="display: none;">
+            <div class="confirmation-content">
+                <h3>Confirm Your Deposit</h3>
+                <p id="confirmCrypto"></p>
+                <p id="confirmAmount"></p>
+                <button id="confirmDeposit" style="padding: 10px 20px; background-color: #42a642;">Confirm</button>
+                <button id="cancelDeposit" style="padding: 10px; background-color: #f84242;">Cancel</button>
+            </div>
         </div>
 
         <!-- Transaction Instructions -->
@@ -75,10 +97,12 @@
             </table>
         </div>
     </div>
-<img src="" alt="">
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('DOMContentLoaded', () => {
     const walletAddress = 'bc1qexampleaddressxyz12345'; // Example wallet address
+    let selectedCrypto = 'bitcoin';
+    let enteredAmount = 0;
 
     // Copy wallet address to clipboard
     document.getElementById('copyWalletAddress').addEventListener('click', () => {
@@ -91,7 +115,7 @@
 
     // Update QR code and wallet address when cryptocurrency selection changes
     document.getElementById('cryptoSelect').addEventListener('change', function () {
-        const selectedCrypto = this.value;
+        selectedCrypto = this.value;
         let newWalletAddress;
         let qrCodePath;
 
@@ -118,36 +142,87 @@
         document.getElementById('qrCode').src = qrCodePath;
     });
 
-    async function fetchDepositHistory() {
-            try {
-                const response = await fetch('/api/deposit-history');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch deposit history');
-                }
-                const data = await response.json();
-                
-                // Populate deposit history table
-                const depositHistoryTable = document.getElementById('depositHistory');
-                depositHistoryTable.innerHTML = ''; // Clear any existing rows
-
-                data.forEach(record => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${new Date(record.date).toLocaleString()}</td>
-                        <td>${record.deposit_method}</td>
-                        <td>${record.amount} ${record.currency}</td>
-                        <td>${record.status}</td>`;
-                    depositHistoryTable.appendChild(row);
-                });
-            } catch (error) {
-                console.error('Error:', error);
-            }
+    // Handle Deposit initiation
+    document.getElementById('initiateDeposit').addEventListener('click', () => {
+        enteredAmount = document.getElementById('cryptoAmount').value;
+        if (!enteredAmount || enteredAmount <= 0) {
+            alert('Please enter a valid amount');
+            return;
         }
 
-        // Fetch deposit history on page load
-        fetchDepositHistory();
-});
+        // Show the confirmation slide-in page
+        document.getElementById('confirmationSlide').style.display = 'block';
+        document.getElementById('confirmCrypto').textContent = `Cryptocurrency: ${selectedCrypto.toUpperCase()}`;
+        document.getElementById('confirmAmount').textContent = `Amount: $${enteredAmount}`;
+    });
 
-    </script>
+    // Confirm Deposit action
+    document.getElementById('confirmDeposit').addEventListener('click', async () => {
+        const userEmail = localStorage.getItem('userEmail'); // Retrieve user's email from local storage
+        const depositDetails = {
+            email: userEmail, // Use the retrieved email
+            amount: enteredAmount,
+            deposit_method: selectedCrypto // Change this key to match the backend
+        };
+
+        try {
+            const response = await fetch('/api/create-deposit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(depositDetails)
+            });
+
+            if (response.ok) {
+                alert('Deposit initiated successfully. after making deposit, please come back to your dashborad and confirm that you have made desposit. Crypto deposits take at least 24hours  to be confirmed in blockchain network.');
+
+                window.location.href = `main-page.html?email=${encodeURIComponent(userEmail)}`;
+                // Reload the deposit history (optional)
+                fetchDepositHistory();
+            } else {
+                const errorData = await response.json();
+                alert(`Error: ${errorData.message}`); // Show the error message from the server
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error initiating deposit');
+        }
+
+        // Hide the confirmation slide-in page
+        document.getElementById('confirmationSlide').style.display = 'none';
+    });
+
+    // Fetch Deposit History (you can reuse this function as needed)
+    async function fetchDepositHistory() {
+        try {
+            const response = await fetch('/api/deposit-history');
+            if (!response.ok) {
+                throw new Error('Failed to fetch deposit history');
+            }
+            const data = await response.json();
+
+            // Populate deposit history table
+            const depositHistoryTable = document.getElementById('depositHistory');
+            depositHistoryTable.innerHTML = ''; // Clear any existing rows
+
+            data.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(record.date).toLocaleString()}</td>
+                    <td>${record.deposit_method}</td>
+                    <td>${record.amount} ${record.currency}</td>
+                    <td>${record.status}</td>`;
+                depositHistoryTable.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error fetching deposit history:', error);
+        }
+    }
+
+    // Initial fetch of deposit history (uncomment if needed)
+    fetchDepositHistory();
+});
+</script>
 </body>
 </html>
