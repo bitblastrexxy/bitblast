@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        /* Add some basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        #card-element {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: block;
+            width: 100%;
+            background-color: #6772e5;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .button:disabled {
+            background-color: #bbb;
+            cursor: not-allowed;
+        }
+    </style>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Enter your payment details</h2>
+        <form id="payment-form">
+            <label for="amountInput">Amount (USD):</label>
+            <input type="number" id="amountInput" placeholder="Enter amount" required />
+            
+            <div id="card-element">
+                <!-- Stripe Elements will be inserted here -->
+            </div>
+            
+            <!-- Error message element -->
+            <div id="card-errors" role="alert"></div>
+            
+            <button class="button" id="submit-button">Submit Payment</button>
+        </form>
+    </div>
+
+    <script>
+        // Initialize Stripe
+        const stripe = Stripe('pk_test_51Q9WFzJZJDw2RPx7dXthW0Gzwldky3EnllvchMj0dPINTQYrQK2QxKtAy4OkWTCuj75GCWxO9jCeh6ZoR9Mw8pNF00mTCLvXyM'); // Replace with your own publishable key
+        const elements = stripe.elements();
+
+        // Create an instance of the card Element
+        const cardElement = elements.create('card');
+        cardElement.mount('#card-element');
+
+        // Handle form submission
+        const form = document.getElementById('payment-form');
+        const submitButton = document.getElementById('submit-button');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const amount = parseInt(document.getElementById('amountInput').value) * 100; // Convert to cents
+
+            // Disable the submit button to prevent multiple submissions
+            submitButton.disabled = true;
+
+            // Call your backend to create a PaymentIntent
+            const response = await fetch('http://localhost:3000/create-payment-intent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ amount }),
+            });
+
+            const { clientSecret } = await response.json();
+
+            // Confirm the payment with Stripe
+            const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+                payment_method: {
+                    card: cardElement,
+                },
+            });
+
+            if (error) {
+                // Display error message to the customer
+                const errorElement = document.getElementById('card-errors');
+                errorElement.textContent = error.message;
+                submitButton.disabled = false; // Re-enable the button in case of error
+            } else if (paymentIntent.status === 'succeeded') {
+                // Payment succeeded
+                alert('Payment succeeded!');
+                // Redirect or handle post-payment flow here
+            }
+        });
+    </script>
+</body>
+</html>

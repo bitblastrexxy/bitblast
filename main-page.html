@@ -127,27 +127,22 @@ For the boldest investors, Plan D offers an exceptional 100% ROI, doubling your 
     <div class="overlay-content">
         <button id="closeOverlay" class="close-button">X</button>
         <h3>Deposit Options</h3>
-        <div class="option" id="localCurrencyButton">
+        <div class="option" id="buyDollarOption">
             <h3>Buy with local currency</h3>
             <p>Visa, Mastercard, American Express</p>
         </div>
-        <div class="option" id="cryptoButton">
+        <div class="option" id="depositCryptoOption">
             <h3>Deposit Crypto</h3>
             <p>Already have crypto? Deposit directly.</p>
         </div>
+        <em>
+            We reocommend that  you use a secure and reliable payment method to ensure a smooth transaction.
+
+        </em>
     </div>
 </div>
 
-<!-- Full-Page Overlay for Stripe Elements -->
-<div id="stripeOverlay" class="full-page-overlay">
-    <div class="overlay-content">
-        <button id="closeStripe">Close</button>
-        <h2>Enter Card Details</h2>
-        <!-- Stripe Elements will be rendered here -->
-        <div id="card-element"></div>
-        <button id="submitPayment">Submit Payment</button>
-    </div>
-</div>
+
 
 
 
@@ -260,64 +255,25 @@ For the boldest investors, Plan D offers an exceptional 100% ROI, doubling your 
     const closeOverlayButton = document.getElementById('closeOverlay');
 
     depositButton.addEventListener('click', () => {
-        depositOverlay.classList.add('show'); // Show the overlay with sliding effect
+        depositOverlay.classList.add('show');
     });
 
     closeOverlayButton.addEventListener('click', () => {
         depositOverlay.classList.remove('show'); // Hide the overlay
     });
 
-    // Handle click events on deposit options
-    document.getElementById('buyDollarOption').addEventListener('click', () => {
-        console.log("Buy Dollar option clicked");
-    });
+   // Handle click events on deposit options
+document.getElementById('buyDollarOption').addEventListener('click', () => {
+    console.log("Buy Dollar option clicked");
+    window.location.href = 'stripe.html'; // Redirect to stripe.html page
+});
 
-    document.getElementById('depositCryptoOption').addEventListener('click', () => {
-        // Specify what happens when "Deposit Crypto" is clicked
-        console.log("Deposit Crypto option clicked");
-    });
+document.getElementById('depositCryptoOption').addEventListener('click', () => {
+    console.log("Deposit Crypto option clicked");
+    // Redirect to another page for crypto deposit if needed
+    // Example: window.location.href = 'crypto-deposit.html';
+});
 
-    // Initialize Stripe
-    const stripe = Stripe('pk_test_51Q9WFzJZJDw2RPx7dXthW0Gzwldky3EnllvchMj0dPINTQYrQK2QxKtAy4OkWTCuj75GCWxO9jCeh6ZoR9Mw8pNF00mTCLvXyM'); // Replace with your Stripe public key
-    const elements = stripe.elements();
-    const cardElement = elements.create('card');
-    cardElement.mount('#card-element');
-
-    // Handle payment submission
-    document.getElementById('submit-button').addEventListener('click', async () => {
-        const amount = parseInt(document.getElementById('amountInput').value) * 100; // Convert to cents
-
-        // Call your backend to create a payment intent
-        const response = await fetch('http://localhost:3000/create-payment-intent', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ amount }),
-        });
-
-        const { clientSecret } = await response.json();
-
-        // Confirm the payment
-        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-            payment_method: {
-                card: cardElement,
-            },
-        });
-
-        if (error) {
-            // Show error to your customer
-            console.error(error.message);
-            alert(error.message);
-        } else {
-            // Payment succeeded
-            if (paymentIntent.status === 'succeeded') {
-                console.log('Payment succeeded!');
-                alert('Payment succeeded!');
-                depositOverlay.classList.remove('show'); // Close the overlay after successful payment
-            }
-        }
-    });
 </script>
 
   
