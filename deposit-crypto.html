@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="  #1f1f1f">
+    <meta name="apple-mobile-web-app-status-bar-style" content="  #1f1f1f">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Deposit Crypto</title>
+    <link rel="stylesheet" href="css/deposit-crypto.css"> 
+    <link rel="stylesheet" href="./css/main-page.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Jacquarda+Bastarda+9&family=Poppins:ital,wght@0,400;1,300;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h3 style="text-align: center; background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 150, 3)); -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-fill-color: transparent; font-size: 16px;">Deposit Cryptocurrency</h3><br><br>
+
+        <!-- Select Cryptocurrency Section -->
+        <div class="crypto-selection">
+            <label for="cryptoSelect">Select Cryptocurrency</label><br>
+            <select id="cryptoSelect">
+                <option value="bitcoin">Bitcoin (BTC)</option>
+                <option value="ethereum">Ethereum (ETH)</option>
+                <option value="usdt">Tether (USDT)</option>
+                <option value="bnb">Binance Coin (BNB)</option>
+            </select>
+        </div>
+
+        <!-- Wallet Address Display -->
+        <div class="wallet-address-section">
+            <h3>Your Wallet Address ></h3>
+            <p id="walletAddress">bc1qexampleaddressxyz12345</p> <!-- Placeholder address -->
+            <button id="copyWalletAddress" style="padding: 5px 10px;
+    background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));">Copy Address</button>
+        </div>
+
+        <!-- QR Code Display -->
+        <div class="qr-code-section">
+            <h3>QR Code ></h3>
+            <img src="./images/qr code for btc.png" alt="QR Code" id="qrCode"> 
+        </div>
+
+        <!-- Transaction Instructions -->
+        <div class="transaction-instructions">
+            <h3>Deposit Instructions</h3>
+            <ul>
+                <li>Ensure the correct cryptocurrency is selected.</li>
+                <li>Copy the wallet address or scan the QR code to send your deposit.</li>
+                <li>Ensure network fees are accounted for when making the transaction.</li>
+                <li>Your deposit will be credited once confirmed by the network.</li>
+            </ul>
+        </div>
+
+        <!-- Deposit History -->
+        <div class="deposit-history-section">
+            <h3>Deposit History</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Currency</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="depositHistory">
+                    <!-- Deposit history records will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+<img src="" alt="">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    const walletAddress = 'bc1qexampleaddressxyz12345'; // Example wallet address
+
+    // Copy wallet address to clipboard
+    document.getElementById('copyWalletAddress').addEventListener('click', () => {
+        navigator.clipboard.writeText(walletAddress).then(() => {
+            alert('Wallet address copied to clipboard');
+        }).catch(err => {
+            console.error('Failed to copy address: ', err);
+        });
+    });
+
+    // Update QR code and wallet address when cryptocurrency selection changes
+    document.getElementById('cryptoSelect').addEventListener('change', function () {
+        const selectedCrypto = this.value;
+        let newWalletAddress;
+        let qrCodePath;
+
+        switch (selectedCrypto) {
+            case 'bitcoin':
+                newWalletAddress = 'bc1qexampleaddressxyz12345';
+                qrCodePath = './images/qr code for btc.png';
+                break;
+            case 'ethereum':
+                newWalletAddress = '0xexampleethereumaddress12345';
+                qrCodePath = './images/qr code for btc.png';
+                break;
+            case 'usdt':
+                newWalletAddress = 'tetherexampleaddress12345';
+                qrCodePath = './images/qr code for btc.png';
+                break;
+            case 'bnb':
+                newWalletAddress = 'bnbexampleaddress12345';
+                qrCodePath = './images/qr code for btc.png';
+                break;
+        }
+
+        document.getElementById('walletAddress').textContent = newWalletAddress;
+        document.getElementById('qrCode').src = qrCodePath;
+    });
+
+    async function fetchDepositHistory() {
+            try {
+                const response = await fetch('/api/deposit-history');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch deposit history');
+                }
+                const data = await response.json();
+                
+                // Populate deposit history table
+                const depositHistoryTable = document.getElementById('depositHistory');
+                depositHistoryTable.innerHTML = ''; // Clear any existing rows
+
+                data.forEach(record => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${new Date(record.date).toLocaleString()}</td>
+                        <td>${record.deposit_method}</td>
+                        <td>${record.amount} ${record.currency}</td>
+                        <td>${record.status}</td>`;
+                    depositHistoryTable.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Fetch deposit history on page load
+        fetchDepositHistory();
+});
+
+    </script>
+</body>
+</html>

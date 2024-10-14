@@ -5,6 +5,7 @@ const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 const mysql = require('mysql2/promise'); // Assuming you are using MySQL
 const bcrypt = require('bcrypt'); // For password hashing
+const router = express.Router();
 const cors = require('cors');
 const path = require('path');
 
@@ -204,9 +205,24 @@ app.post('/api/create-payment-intent', async (req, res) => {
 
 
 
+router.get('/api/deposit-history', async (req, res) => {
+    const userEmail = req.query.email; // You can pass email as a query parameter
+    
+    try {
+        const results = await db.query(`
+            SELECT date, deposit_method, amount, status
+            FROM deposits
+            WHERE email = ? ORDER BY date DESC
+        `, [userEmail]);
 
+        res.json(results);
+    } catch (error) {
+        console.error('Error fetching deposit history:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
-
+module.exports = router;
 
 
 

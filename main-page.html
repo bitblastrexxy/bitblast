@@ -56,7 +56,7 @@
         <img src="./images/user_9303328.png" alt="">
     </div>
 </section>
-
+<div class="spinner" id="loadingSpinner"></div>
 <div class="slideshow-container">
     <!-- Slides -->
     <div class="mySlides fade">
@@ -217,6 +217,11 @@ For the boldest investors, Plan D offers an exceptional 100% ROI, doubling your 
         const toggleBalanceBtn = document.getElementById('toggleBalance');
         const balanceDisplay = document.getElementById('balance');
         let actualBalance; // Variable to store actual balance
+        // Spinner element
+const loadingSpinner = document.getElementById('loadingSpinner');
+
+
+
 
         // Fetch user's balance from the server
         if (userEmail) {
@@ -249,6 +254,28 @@ For the boldest investors, Plan D offers an exceptional 100% ROI, doubling your 
         });
     });
 
+    // Handle click events on deposit options
+document.getElementById('buyDollarOption').addEventListener('click', () => {
+    // Show the spinner
+    loadingSpinner.style.display = 'block';
+
+    // Simulate page navigation with a delay (replace with actual page navigation logic)
+    window.location.href = 'stripe.html'; // Replace with your actual page navigation
+});
+
+document.getElementById('depositCryptoOption').addEventListener('click', () => {
+    // Show the spinner
+    loadingSpinner.style.display = 'block';
+
+    // Simulate page navigation with a delay (replace with actual page navigation logic)
+    window.location.href = 'deposit-crypto.html'; // Replace with your actual page navigation
+});
+
+// Hide spinner when the page has loaded completely
+window.addEventListener('load', function () {
+    loadingSpinner.style.display = 'none';
+});
+
     // Deposit overlay functionality
     const depositButton = document.querySelector('.button button');
     const depositOverlay = document.getElementById('depositOverlay');
@@ -270,8 +297,7 @@ document.getElementById('buyDollarOption').addEventListener('click', () => {
 
 document.getElementById('depositCryptoOption').addEventListener('click', () => {
     console.log("Deposit Crypto option clicked");
-    // Redirect to another page for crypto deposit if needed
-    // Example: window.location.href = 'crypto-deposit.html';
+    window.location.href = 'deposit-crypto.html';
 });
 
 </script>
