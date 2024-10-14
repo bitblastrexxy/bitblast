@@ -35,3 +35,42 @@ function currentSlide(n) {
 
 
 
+          // Restrict deposit amount based on selected plan
+          document.addEventListener('DOMContentLoaded', function() {
+            const depositAmountInput = document.getElementById('deposit-amount');
+            const depositButton = document.getElementById('deposit-button');
+            const depositError = document.getElementById('deposit-error');
+            const planRadioButtons = document.querySelectorAll('input[name="plan"]');
+            
+            const planLimits = {
+                'plan-1': { min: 50, max: 999 },
+                'plan-2': { min: 1000, max: 4999 },
+                'plan-3': { min: 5000, max: Infinity }
+            };
+
+            let selectedPlan = null;
+
+            planRadioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    selectedPlan = planLimits[this.value];
+                    depositError.textContent = ''; // Clear any previous errors
+                });
+            });
+
+            depositButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                const depositAmount = parseFloat(depositAmountInput.value);
+
+                if (selectedPlan) {
+                    if (depositAmount < selectedPlan.min || depositAmount > selectedPlan.max) {
+                        depositError.textContent = `Deposit amount must be between $${selectedPlan.min} and $${selectedPlan.max}`;
+                    } else {
+                        // Proceed with form submission
+                        depositError.textContent = ''; // Clear error
+                        // You can submit the form here or do further processing
+                    }
+                } else {
+                    depositError.textContent = 'Please select a plan';
+                }
+            });
+});

@@ -91,6 +91,36 @@ app.post('/api/signup', async (req, res) => {
 
 
 
+// Define the sendEmail function
+async function sendEmail(to, subject, htmlContent) {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER, 
+                pass: process.env.EMAIL_PASS 
+            }
+        });
+
+        // Set up email options
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: to,
+            subject: subject, 
+            html: htmlContent
+        };
+
+        // Send the email
+        await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully');
+    } catch (error) {
+        console.error('Error sending email:', error);
+    }
+}
+
+
+
+
 
 
 // Simplified OTP verification route
@@ -236,47 +266,149 @@ app.post('/api/create-deposit', async (req, res) => {
 
 
 
-// Assuming you are using Express and have already set up your server
-// app.post('/api/create-deposit', async (req, res) => {
-//     const { email, amount, deposit_method } = req.body; // Ensure deposit_method is used here
-
-//     if (!email || !amount || !deposit_method) {
-//         return res.status(400).json({ message: 'Missing required fields' });
-//     }
-
-//     const investmentStartDate = new Date(); // Current date for investment start
-//     const investmentEndDate = null; // Set to null for now, will calculate later
-
-//     try {
-//         const result = await db.query(
-//             'INSERT INTO deposits (email, amount, date, status, investment_start_date, investment_end_date, plan_name, deposit_method) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?)',
-//             [email, amount, 'pending', investmentStartDate, investmentEndDate, null, deposit_method] // Plan name is null
-//         );
-
-//         res.status(201).json({ message: 'Deposit created successfully', depositId: result.insertId });
-//     } catch (error) {
-//         console.error('Error creating deposit:', error);
-//         res.status(500).json({ message: 'Error creating deposit', error });
-//     }
-// });
-
-
-// Route for fetching deposit history
-app.get('/api/deposit-history', async (req, res) => {
-    const userEmail = req.headers['x-user-email']; // Assuming you're passing user email in headers
-
-    if (!userEmail) {
-        return res.status(400).json({ error: 'Invalid input' });
+app.get('/users', (req, res) => {
+    const username = req.query.username;
+    if (!username) {
+        return res.status(400).json({ message: 'Username is required' });
     }
 
+    db.query('SELECT balance FROM users WHERE username = ?', [username], (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results);
+    });
+});
+
+
+app.post('/api/deposit', async (req, res) => {
     try {
-        const history = await getDepositHistory(userEmail);
-        return res.status(200).json(history);
+        const { 
+            email, // using email instead of username
+            depositAmount, 
+            planName, 
+            planPrincipleReturn, 
+            planCreditAmount, 
+            planDepositFee, 
+            planDebitAmount, 
+            depositMethod 
+        } = req.body;
+
+        // Validate request body
+        if (!email || !planName || !planCreditAmount || !depositAmount || !depositMethod) {
+            return res.status(400).json({ message: "Please provide all required fields" });
+        }
+
+        // Check if user exists
+        const [userResult] = await db.query('SELECT * FROM users WHERE email = ?', [email]); // Changed to db
+        const user = userResult[0]; // Select the first user
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Handle balance deduction if deposit method is balance
+        if (depositMethod === 'balance') {
+            if (user.balance < depositAmount) {
+                return res.status(400).json({ message: 'Insufficient balance' });
+            }
+            
+            // Deduct the deposit amount from user's balance
+            await db.query('UPDATE users SET balance = balance - ? WHERE email = ?', [depositAmount, email]); // Changed to db
+        }
+
+        // Calculate investment end date based on plan
+        const planEndTimes = {
+            '10% RIO AFTER 24 HOURS': 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+            '20% RIO AFTER 72 HOURS': 72 * 60 * 60 * 1000, // 72 hours in milliseconds
+            '50% RIO LONG TERM': 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+            '100% RIO AFTER 30 DAYS': 30 * 24 * 60 * 60 * 1000 // 30 days in milliseconds
+        };
+
+        const investmentStartDate = new Date();
+        const investmentEndDate = new Date(investmentStartDate.getTime() + (planEndTimes[planName] || 0));
+
+        // Insert a new transaction into the transactions table
+        await db.query(
+            `INSERT INTO transactions 
+            (email, plan_name, plan_principle_return, plan_credit_amount, plan_deposit_fee, plan_debit_amount, deposit_method, transaction_date) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [email, planName, planPrincipleReturn, planCreditAmount, planDepositFee, planDebitAmount, depositMethod] // Changed to db
+        );
+
+        // Insert the same details into the deposits table
+        await db.query(
+            `INSERT INTO deposits 
+            (email, amount, date, investment_start_date, investment_end_date, plan_name, plan_principle_return, plan_credit_amount, plan_deposit_fee, plan_debit_amount, deposit_method, status) 
+            VALUES ((SELECT id FROM users WHERE email = ?), ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+            [email, depositAmount, investmentStartDate, investmentEndDate, planName, planPrincipleReturn, planCreditAmount, planDepositFee, planDebitAmount, depositMethod] // Changed to db
+        );
+
+        // Send confirmation email
+        const emailContent = `
+            <div style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4;">
+                <table width="100%" style="max-width: 600px; margin: auto; border-collapse: collapse;">
+                    <tr>
+                        <td style="text-align: center; padding: 20px;">
+                            <img src="https://github.com/bitblastrexxy/bitblast/blob/main/images/moniegram%20logo.png?raw=true" alt="Company Logo" style="max-width: 100%; height: auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #740000; padding: 20px; text-align: center; color: white;">
+                            <h1 style="margin: 0;">Deposit Successful!</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: white; padding: 20px;">
+                            <p style="font-size: 16px; line-height: 1.5;">Dear ${email},</p>
+                            <p style="font-size: 16px; line-height: 1.5;">Your deposit of $${depositAmount} has been successfully submitted. The deposit will be reflected in the "Active Deposits" tab once confirmed by the admin after blockchain verification.</p>
+                            <p style="font-size: 16px; line-height: 1.5;">Thank you for investing with us!</p>
+                            <a href="https://biggyinvestments.onrender.com/signin.html" style="display: inline-block; background-color: #740000; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Return to Dashboard</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f4f4f4; padding: 10px; text-align: center;">
+                            <p style="font-size: 12px; color: #740000;">&copy; 2024 BiggyassetsLTD. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        `;
+
+        // Call sendEmail to notify the user
+        sendEmail(user.email, 'Deposit Confirmation', emailContent);
+
+        res.json({ success: true, message: 'Deposit successful. Confirmation email sent.' });
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Failed to fetch deposit history' });
+        console.error('Error processing deposit:', err); // Enhanced error logging
+        res.status(500).json({ message: 'Error processing deposit' });
     }
 });
+
+
+
+
+
+
+// Route to fetch bitcoin_address and balance on page load
+app.get('/api/user-info', (req, res) => {
+    const { username } = req.query; // Username will be sent from the frontend
+  
+    pool.query(
+        'SELECT bitcoin_address, balance FROM users WHERE username = ?',
+        [username],
+        (error, results) => {
+            if (error) {
+                console.error('Error fetching user info:', error);
+                return res.status(500).json({ message: 'Error fetching user info.' });
+            }
+            if (results.length === 0) {
+                return res.status(404).json({ message: 'User not found.' });
+            }
+            const userInfo = results[0];
+            res.json(userInfo); // Send the bitcoin_address and balance
+        }
+    );
+  });
+  
 
 
 
