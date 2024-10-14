@@ -338,7 +338,7 @@ app.post('/api/deposit', async (req, res) => {
         await db.query(
             `INSERT INTO deposits 
             (email, amount, date, investment_start_date, investment_end_date, plan_name, plan_principle_return, plan_credit_amount, plan_deposit_fee, plan_debit_amount, deposit_method, status) 
-            VALUES ((SELECT id FROM users WHERE email = ?), ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+            VALUES ((SELECT email FROM users WHERE email = ?), ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
             [email, depositAmount, investmentStartDate, investmentEndDate, planName, planPrincipleReturn, planCreditAmount, planDepositFee, planDebitAmount, depositMethod] // Changed to db
         );
 
@@ -348,11 +348,11 @@ app.post('/api/deposit', async (req, res) => {
                 <table width="100%" style="max-width: 600px; margin: auto; border-collapse: collapse;">
                     <tr>
                         <td style="text-align: center; padding: 20px;">
-                            <img src="https://github.com/bitblastrexxy/bitblast/blob/main/images/moniegram%20logo.png?raw=true" alt="Company Logo" style="max-width: 100%; height: auto;" />
+                            <img src="https://github.com/bitblastrexxy/bitblast/blob/main/images/moniegram%20logo.png?raw=true" alt="Company Logo" style="max-width: 30%; height: auto;" />
                         </td>
                     </tr>
                     <tr>
-                        <td style="background-color: #740000; padding: 20px; text-align: center; color: white;">
+                        <td style="background-color: #ffa62a; padding: 20px; text-align: center; color: white;">
                             <h1 style="margin: 0;">Deposit Successful!</h1>
                         </td>
                     </tr>
@@ -361,12 +361,12 @@ app.post('/api/deposit', async (req, res) => {
                             <p style="font-size: 16px; line-height: 1.5;">Dear ${email},</p>
                             <p style="font-size: 16px; line-height: 1.5;">Your deposit of $${depositAmount} has been successfully submitted. The deposit will be reflected in the "Active Deposits" tab once confirmed by the admin after blockchain verification.</p>
                             <p style="font-size: 16px; line-height: 1.5;">Thank you for investing with us!</p>
-                            <a href="https://biggyinvestments.onrender.com/signin.html" style="display: inline-block; background-color: #740000; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Return to Dashboard</a>
+                            <a href="https://biggyinvestments.onrender.com/signin.html" style="display: inline-block; background-color: #ffa62a; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Return to Dashboard</a>
                         </td>
                     </tr>
                     <tr>
                         <td style="background-color: #f4f4f4; padding: 10px; text-align: center;">
-                            <p style="font-size: 12px; color: #740000;">&copy; 2024 BiggyassetsLTD. All rights reserved.</p>
+                            <p style="font-size: 12px; color: #ffa62a;">&copy; 2024 BiggyassetsLTD. All rights reserved.</p>
                         </td>
                     </tr>
                 </table>

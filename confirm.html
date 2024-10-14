@@ -81,9 +81,11 @@
                     </div>
                   </div>
             </main><br>
+            <div id="spinner" class="spinner" style="display: none;"></div> <!-- Add this in your body -->
+
             <nav class="bottom-nav">
               <ul class="nav-links">
-                  <li><a href="#"><img src="./images/home_15382980.png" alt="Home Icon"><span>Home</span></a></li>
+                  <li><a href="main-page.html"><img src="./images/home_15382980.png" alt="Home Icon"><span>Home</span></a></li>
                   <li><a href="#"><img src="./images/market_13248824.png" alt="Services Icon" style="background-color: rgb(255, 174, 0); border-radius: 20rem;"><span>Chat</span></a></li>
                   <li><a href="#"><img src="./images/money-management_5166084.png" alt="About Icon" style="border-radius: 20rem; background-color: rgb(255, 174, 0);"><span>Wallet</span></a></li>
                   <li><a href="#"><img src="./images/user_9303328.png" alt="About Icon" style="border-radius: 20rem;"><span>Profile</span></a></li>
@@ -200,7 +202,7 @@ function handleConfirmPage() {
 
 function confirmDeposit(e) {
     e.preventDefault();
-
+    document.getElementById('spinner').style.display = 'block';
     // Get the user's email from local storage
     const email = localStorage.getItem('userEmail'); // Use the email key stored in local storage
 
@@ -245,6 +247,7 @@ function confirmDeposit(e) {
     })
     .then(response => response.json())
     .then(data => {
+      document.getElementById('spinner').style.display = 'none';
         if (data.success) {
             console.log('Deposit successful!');
             alert('The deposit has been saved. Your investment plan will resume and automatically be displayed on your ACTIVE DEPOSITS tab when admin confirms transaction on blockchain. Redirecting to the dashboard...');
@@ -254,6 +257,7 @@ function confirmDeposit(e) {
         }
     })
     .catch(error => {
+      document.getElementById('spinner').style.display = 'none';
         console.log('Error:', error);
     });
 }

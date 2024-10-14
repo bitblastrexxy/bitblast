@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="  #1f1f1f">
+    <meta name="apple-mobile-web-app-status-bar-style" content="  #1f1f1f">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Assets Page - Moniegram</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/assets.css"> 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Jacquarda+Bastarda+9&family=Poppins:ital,wght@0,400;1,300;1,400&display=swap" rel="stylesheet">
+
+</head>
+<body>
+    <div class="assets-container">
+        <!-- Title Section -->
+         
+    <section class="header">
+        <div class="logo">
+            <img src="./images/user_9303328.png" alt="">
+        </div>
+        <img src="./images/notification_12998251.png" alt="" class="notification">
+    </section>
+        <header>
+            <h2>Assets</h2>
+            <p>Overview of your active investments</p>
+        </header>
+
+        <!-- Total Assets Section -->
+        <section class="total-assets">
+            <h4>Total Assets</h4>
+            <div class="total-value">$10,000</div> <!-- This value will be updated dynamically -->
+            <p>Total value of all active investments.</p>
+        </section>
+
+        <!-- Investment Table -->
+        <section class="investment-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Investment Plan</th>
+                        <th>Amount</th>
+                        <th>Profit</th>
+                        <th>End Date</th>
+                    </tr>
+                </thead>
+                <tbody id="investment-list">
+                    <!-- Sample investment data rows -->
+                    <tr>
+                        <td>Plan A</td>
+                        <td>$2,000</td>
+                        <td>$200</td>
+                        <td>2024-12-31</td>
+                    </tr>
+                    <tr>
+                        <td>Plan B</td>
+                        <td>$5,000</td>
+                        <td>$1,000</td>
+                        <td>2024-11-30</td>
+                    </tr>
+                    <!-- Rows will be added dynamically via JS -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Graph Section -->
+        <section class="graph-section">
+            <h2>Investment Performance</h2>
+            <canvas id="investmentGraph"></canvas> <!-- Chart.js will render here -->
+        </section>
+
+        <!-- Recent Transactions -->
+        <section class="recent-transactions">
+            <h2>Recent Transactions</h2>
+            <ul id="transaction-list">
+                <!-- Sample transaction data -->
+                <li>
+                    <span>Deposit: Plan A - $2,000</span>
+                    <em>2024-10-01</em>
+                </li>
+                <li>
+                    <span>Withdrawal: Plan B - $1,000</span>
+                    <em>2024-09-15</em>
+                </li>
+                <!-- Transactions will be added dynamically via JS -->
+            </ul>
+        </section>
+    </div><br><br><br><br><br>
+
+    <nav class="bottom-nav">
+        <ul class="nav-links">
+            <li><a href="main-page.html"><img src="./images/home_15382980.png" alt="Home Icon"><span>Home</span></a></li>
+            <li><a href="#"><img src="./images/market_13248824.png" alt="Services Icon" style="background-color: rgb(255, 174, 0); border-radius: 20rem;"><span>Chat</span></a></li>
+            <li><a href="#"><img src="./images/money-management_5166084.png" alt="About Icon" style="border-radius: 20rem; background-color: rgb(255, 174, 0);"><span>Wallet</span></a></li>
+            <li><a href="#"><img src="./images/user_9303328.png" alt="About Icon" style="border-radius: 20rem;"><span>Profile</span></a></li>
+            <li><a href="#"><img src="./images/wallet_6948492.png" alt="Contact Icon"><span>Assets</span></a></li>
+        </ul>
+    </nav>
+
+    <!-- Link to the JavaScript file -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+    // Example data for investments
+    const investments = [
+        { plan: "Plan A", amount: 2000, profit: 200, endDate: "2024-12-31" },
+        { plan: "Plan B", amount: 5000, profit: 1000, endDate: "2024-11-30" }
+    ];
+
+    const transactions = [
+        { type: "Deposit", plan: "Plan A", amount: 2000, date: "2024-10-01" },
+        { type: "Withdrawal", plan: "Plan B", amount: 1000, date: "2024-09-15" }
+    ];
+
+    // Populate investment table
+    const investmentList = document.getElementById("investment-list");
+    investments.forEach(inv => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${inv.plan}</td>
+            <td>$${inv.amount}</td>
+            <td>$${inv.profit}</td>
+            <td>${inv.endDate}</td>
+        `;
+        investmentList.appendChild(row);
+    });
+
+    // Populate recent transactions
+    const transactionList = document.getElementById("transaction-list");
+    transactions.forEach(txn => {
+        const listItem = document.createElement("li");
+        listItem.innerHTML = `
+            <span>${txn.type}: ${txn.plan} - $${txn.amount}</span>
+            <em>${txn.date}</em>
+        `;
+        transactionList.appendChild(listItem);
+    });
+
+    // Example Chart.js setup for the graph
+    const ctx = document.getElementById("investmentGraph").getContext("2d");
+    const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: ["January", "February", "March", "April", "May", "June"],
+            datasets: [{
+                label: "Investment Performance",
+                data: [1200, 1500, 1800, 2200, 2500, 2800],
+                backgroundColor: "rgba(0, 123, 255, 0.2)",
+                borderColor: "#007bff",
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+});
+
+    </script>
+</body>
+</html>

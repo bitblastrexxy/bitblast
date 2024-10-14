@@ -89,27 +89,33 @@
             <div class="plans">
                 <div class="plan-line1">
                     <div class="plan">
-                        <img src="./images/Frame 34.png" alt="">
+                        <a href="invest.html"><img src="./images/Frame 34.png" alt=""></a>
                         <p>
                             Our Plan A is ideal for investors seeking steady, low-risk growth. With a 10% return on investment (ROI), this plan offers a solid and reliable performance for those who prefer a conservative approach. It’s a great way to begin your investment journey, allowing you to build confidence while minimizing exposure to market fluctuations.
                         </p>
                     </div>
                     <div class="plan">
-                        <img src="./images/Frame 35.png" alt="">
+                        <a href="invest.html">
+                            <img src="./images/Frame 35.png" alt="">
+                        </a>
                         <p>
                             Plan B: 20% Returns
                             For investors seeking moderate growth with slightly higher returns, Plan B offers a 20% ROI. This plan is balanced, providing an opportunity for enhanced returns without taking on excessive risk. It’s perfect for investors looking to move beyond the conservative approach and aim for better growth potential.
                         </p>
                     </div>
                     <div class="plan">
-                        <img src="./images/Frame 36.png" alt="">
+                        <a href="invest.html">
+                            <img src="./images/Frame 36.png" alt="">
+                        </a>
                         <p>
                             Plan C: 50% Returns
                             Plan C is for investors ready to engage in higher-reward opportunities, with a 50% ROI. This plan is structured for those who are comfortable with moderate risk and want to experience significant gains. It’s an ideal choice for those seeking to capitalize on market opportunities while still maintaining some level of risk control.
                         </p>
                     </div>
                     <div class="plan">
-                        <img src="./images/Frame 37.png" alt="">
+                        <a href="invest.html">
+                            <img src="./images/Frame 37.png" alt="">
+                        </a>
                         <p>
                             Plan D: 100% Returns
                             For the boldest investors, Plan D offers an exceptional 100% ROI, doubling your investment. This plan targets high-return opportunities and is best suited for those with a higher risk tolerance. It’s designed for investors looking to maximize their capital in the shortest time possible, with the understanding that it comes with increased exposure to market fluctuations.
@@ -180,11 +186,11 @@
 
     <nav class="bottom-nav">
         <ul class="nav-links">
-            <li><a href="#"><img src="./images/home_15382980.png" alt="Home Icon"><span>Home</span></a></li>
+            <li><a href="main-page.html"><img src="./images/home_15382980.png" alt="Home Icon"><span>Home</span></a></li>
             <li><a href="#"><img src="./images/market_13248824.png" alt="Services Icon" style="background-color: rgb(255, 174, 0); border-radius: 20rem;"><span>Chat</span></a></li>
             <li><a href="#"><img src="./images/money-management_5166084.png" alt="About Icon" style="border-radius: 20rem; background-color: rgb(255, 174, 0);"><span>Wallet</span></a></li>
             <li><a href="#"><img src="./images/user_9303328.png" alt="About Icon" style="border-radius: 20rem;"><span>Profile</span></a></li>
-            <li><a href="#"><img src="./images/wallet_6948492.png" alt="Contact Icon"><span>Assets</span></a></li>
+            <li><a href="assets.html"><img src="./images/wallet_6948492.png" alt="Contact Icon"><span>Assets</span></a></li>
         </ul>
     </nav>
 
@@ -249,7 +255,7 @@ const loadingSpinner = document.getElementById('loadingSpinner');
                 balanceDisplay.innerText = '*****';
             }
         });
-    });
+});
 
     // Handle click events on deposit options
 document.getElementById('buyDollarOption').addEventListener('click', () => {
@@ -274,22 +280,24 @@ window.addEventListener('load', function () {
 });
 
 
+const depositButton = document.getElementById('depositButton');
+const depositOverlay = document.getElementById('depositOverlay');
+const closeOverlayButton = document.getElementById('closeOverlay');
 
-    const depositButton = document.getElementById('depositButton');
-        const depositOverlay = document.getElementById('depositOverlay');
-        const closeOverlayButton = document.getElementById('closeOverlay');
+// Show the overlay when the deposit button is clicked
+depositButton.addEventListener('click', function() {
+    console.log('Deposit button clicked'); // Debugging
+    depositOverlay.classList.add('show');  // Add the 'show' class
+    console.log('Overlay should slide into view now'); // Debugging
+});
 
-        depositButton.addEventListener('click', function() {
-            depositOverlay.classList.add('active'); // Show the overlay
-        });
-
-        closeOverlayButton.addEventListener('click', function() {
-            depositOverlay.classList.remove('active'); // Hide the overlay
- });
-
+// Hide the overlay when the close button is clicked
+closeOverlayButton.addEventListener('click', function() {
+    console.log('Close button clicked'); // Debugging
+    depositOverlay.classList.remove('show');  // Remove the 'show' class
+    console.log('Overlay should slide out of view now'); // Debugging
+});
 
 </script>
-
-  
 </body>
 </html>
