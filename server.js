@@ -399,7 +399,7 @@ app.post('/api/deposit', async (req, res) => {
 app.get('/api/user-info', (req, res) => {
     const { username } = req.query; // Username will be sent from the frontend
   
-    pool.query(
+    db.query( // Change pool to db
         'SELECT bitcoin_address, balance FROM users WHERE username = ?',
         [username],
         (error, results) => {
@@ -414,7 +414,33 @@ app.get('/api/user-info', (req, res) => {
             res.json(userInfo); // Send the bitcoin_address and balance
         }
     );
-  });
+});
+
+
+// Route to fetch deposits and withdrawals
+app.get('/api/transactions', async (req, res) => {
+    const { email } = req.query; // Email will be sent from the frontend
+
+    try {
+        const [withdrawals] = await db.query(
+            'SELECT amount, request_date, status FROM pending_withdrawals WHERE email = ?',
+            [email]
+        );
+
+        const [deposits] = await db.query(
+            'SELECT amount, deposit_method, date, status FROM deposits WHERE email = ?',
+            [email]
+        );
+
+        res.json({ withdrawals, deposits });
+    } catch (error) {
+        console.error('Error fetching transactions:', error);
+        res.status(500).json({ message: 'Error fetching transactions.' });
+    }
+});
+
+
+
 
 
 
@@ -476,10 +502,6 @@ app.post('/api/withdraw', (req, res) => {
 
 
 
-
-
-
-
 // Global error handlers for unhandled errors
 process.on('uncaughtException', (err) => {
     console.error('Unhandled exception:', err);
@@ -487,6 +509,33 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled rejection at:', promise, 'reason:', reason);
+});
+
+
+
+
+app.post('/api/assets', async (req, res) => {
+    try {
+        const { email } = req.body; // Extract email from the request body
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+        
+        // Fetch active deposits for the user
+        const [deposits] = await db.query('SELECT * FROM active_deposits WHERE email = ?', [email]);
+        
+        // Fetch transactions for the user
+        const [transactions] = await db.query('SELECT * FROM transactions WHERE email = ?', [email]);
+
+        // Calculate total amount of active deposits
+        const totalAmount = deposits.length > 0 ? deposits.reduce((acc, deposit) => acc + deposit.amount, 0) : 0;
+
+        // Ensure totalAmount is a number
+        res.json({ totalAmount: Number(totalAmount), deposits, transactions }); // Send the data as JSON response
+    } catch (error) {
+        console.error('Error fetching assets:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 

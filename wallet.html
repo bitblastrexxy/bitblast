@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <link rel="manifest" href="/manifest.json">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="  #1f1f1f">
-    <meta name="apple-mobile-web-app-status-bar-style" content="  #1f1f1f">
+    <meta name="theme-color" content="#1f1f1f">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wallets Page - Moniegram</title>
     <link rel="stylesheet" href="css/wallet.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,23 +16,20 @@
     <div class="container">
         <header class="wallet-header">
             <h2>Wallets</h2>
-            <p class="balance">Available Balance <br> <span>$3,500</span></p>
+            <p class="balance">Available Balance <br> <span id="balance">Loading...</span></p>
             <div class="wallet-actions">
                 <button class="btn" id="depositBtn">Deposit</button>
                 <button class="btn" id="withdrawBtn">Withdraw</button>
-                <!-- <select id="currencySelect" class="currency-select">
-                    <option value="usd">USD</option>
-                    <option value="btc">Bitcoin</option>
-                    <option value="eth">Ethereum</option>
-                </select> -->
             </div>
         </header>
 
         <section class="transactions">
-
+            <h3>Withdrawals</h3>
+            <div id="withdrawals"></div>
+            <h3>Deposits</h3>
+            <div id="deposits" class="deposits"></div>
         </section>
         
-       
 
         <div class="floating-buttons">
             <button class="btn" id="quickDepositBtn">Quick Deposit</button>
@@ -46,31 +41,94 @@
         <ul class="nav-links">
             <li><a href="main-page.html"><img src="./images/home_15382980.png" alt="Home Icon"><span>Home</span></a></li>
             <li><a href="#"><img src="./images/market_13248824.png" alt="Services Icon" style="background-color: rgb(255, 174, 0); border-radius: 20rem;"><span>Chat</span></a></li>
-            <li><a href="#"><img src="./images/money-management_5166084.png" alt="About Icon" style="border-radius: 20rem; background-color: rgb(255, 174, 0);"><span>Wallet</span></a></li>
-            <li><a href="#"><img src="./images/user_9303328.png" alt="About Icon" style="border-radius: 20rem;"><span>Profile</span></a></li>
-            <li><a href="#"><img src="./images/wallet_6948492.png" alt="Contact Icon"><span>Assets</span></a></li>
+            <li><a href="wallet.html"><img src="./images/money-management_5166084.png" alt="About Icon" style="border-radius: 20rem; background-color: rgb(255, 174, 0);"><span>Wallet</span></a></li>
+            <li><a href="profile"><img src="./images/user_9303328.png" alt="About Icon" style="border-radius: 20rem;"><span>Profile</span></a></li>
+            <li><a href="assets.html"><img src="./images/wallet_6948492.png" alt="Contact Icon"><span>Assets</span></a></li>
         </ul>
     </nav>
 
     <script>
         // wallets.js
 
-document.getElementById('depositBtn').addEventListener('click', function() {
-    window.location.href = 'stripe.html'
+        document.getElementById('depositBtn').addEventListener('click', function() {
+            window.location.href = 'stripe.html';
+        });
+
+        document.getElementById('withdrawBtn').addEventListener('click', function() {
+            window.location.href = 'withdrawal.html';
+        });
+
+        document.getElementById('quickDepositBtn').addEventListener('click', function() {
+            window.location.href = 'deposit-crypto.html';
+        });
+
+        document.getElementById('quickWithdrawBtn').addEventListener('click', function() {
+            // Implement quick withdraw functionality if needed
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+    const userEmail = localStorage.getItem('userEmail'); // Get the userEmail from local storage
+
+    // Fetch user balance on page load
+    let currentBalance = 0;
+
+    fetch('/api/getBalance', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: userEmail })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentBalance = data.balance; // Store the balance for later comparison
+            document.getElementById('balance').textContent = currentBalance;
+        } else {
+            console.error('Error fetching balance:', data.message);
+        }
+    })
+    .catch(error => console.error('Error fetching balance:', error));
+
+    // Fetch withdrawals and deposits
+    fetch(`/api/transactions?email=${userEmail}`)
+        .then(response => response.json())
+        .then(data => {
+            const withdrawalsDiv = document.getElementById('withdrawals');
+            const depositsDiv = document.getElementById('deposits');
+
+            // Display withdrawals
+            data.withdrawals.forEach(withdrawal => {
+                const withdrawalElement = document.createElement('div');
+                withdrawalElement.className = 'transaction-card'; // Add card class
+                withdrawalElement.innerHTML = `
+                    <div class="transaction-details">
+                        <div>Amount - $${withdrawal.amount}</div>
+                        <div>Status - ${withdrawal.status}</div>
+                    </div>
+                    <div class="transaction-date">${withdrawal.request_date}</div>
+                `;
+                withdrawalsDiv.appendChild(withdrawalElement);
+            });
+
+            // Display deposits
+            data.deposits.forEach(deposit => {
+                const depositElement = document.createElement('div');
+                depositElement.className = 'transaction-card'; // Add card class
+                depositElement.innerHTML = `
+                    <div class="transaction-details">
+                        <div>Amount - $${deposit.amount}</div>
+                        <div>Payment Method - ${deposit.deposit_method}</div>
+                        <div>Status - ${deposit.status}</div>
+                    </div>
+                    <div class="transaction-date">${deposit.date}</div>
+                `;
+                depositsDiv.appendChild(depositElement);
+            });
+        })
+        .catch(error => console.error('Error fetching transactions:', error));
 });
 
-document.getElementById('withdrawBtn').addEventListener('click', function() {
-    window.location.href = 'withdrawal.html'
-});
-
-
-document.getElementById('quickDepositBtn').addEventListener('click', function() {
-    window.location.href = 'deposit-crypto.html'
-});
-
-document.getElementById('quickWithdrawBtn').addEventListener('click', function() {
-    
-});
 
     </script>
 </body>

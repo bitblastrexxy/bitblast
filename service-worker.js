@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moniegram-cache-v8';
+const CACHE_NAME = 'moniegram-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
