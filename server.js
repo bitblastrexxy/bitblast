@@ -266,17 +266,24 @@ app.post('/api/create-deposit', async (req, res) => {
 
 
 
-app.get('/users', (req, res) => {
-    const username = req.query.username;
-    if (!username) {
-        return res.status(400).json({ message: 'Username is required' });
-    }
+app.post('/api/getBalance', async (req, res) => {
+    const { email } = req.body;
 
-    db.query('SELECT balance FROM users WHERE username = ?', [username], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
-    });
+    try {
+        const [result] = await db.query('SELECT balance FROM users WHERE email = ?', [email]);
+
+        if (result.length > 0) {
+            const balance = result[0].balance;
+            res.json({ success: true, balance });
+        } else {
+            res.status(404).json({ success: false, message: 'User not found' });
+        }
+    } catch (err) {
+        console.error('Error fetching balance:', err);
+        res.status(500).json({ success: false, message: 'Error fetching balance' });
+    }
 });
+
 
 
 app.post('/api/deposit', async (req, res) => {
@@ -408,7 +415,79 @@ app.get('/api/user-info', (req, res) => {
         }
     );
   });
+
+
+
+
+
+
+// Assuming 'db' is the pool from your db.js file
+app.post('/api/withdraw', (req, res) => {
+    console.log('Withdrawal endpoint hit');
+    
+    const { userEmail, amount, method, walletAddress, bankDetails } = req.body;
   
+    console.log("Withdrawal request received for user:", userEmail);
+    console.log("Amount:", amount);
+    console.log("Withdrawal method:", method);
+
+    // Step 0: Check if the db object is defined
+    if (!db) {
+        console.error('Database connection (db) is not defined.');
+        return res.status(500).json({ message: 'Database connection error.' });
+    }
+
+    let query = '';
+    let queryParams = [];
+  
+    // Proceed with the withdrawal request without checking the balance
+    if (method === 'bank') {
+        const { bankName, accountName, accountNumber } = bankDetails;
+        query = 'INSERT INTO pending_withdrawals (email, amount, status, request_date, bank_name, account_name, account_number, method) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)';
+        queryParams = [userEmail, amount, 'pending', bankName, accountName, accountNumber, method];
+        console.log("Bank withdrawal for user:", userEmail);
+    } else if (method === 'wallet') {
+        query = 'INSERT INTO pending_withdrawals (email, amount, status, request_date, wallet_address, method) VALUES (?, ?, ?, NOW(), ?, ?)';
+        queryParams = [userEmail, amount, 'pending', walletAddress, method];
+        console.log("Wallet withdrawal for user:", userEmail);
+    } else {
+        console.log("Invalid withdrawal method.");
+        return res.status(400).json({ message: 'Invalid withdrawal method selected.' });
+    }
+  
+    console.log("Executing query:", query, "with params:", queryParams);  // Log the query being executed
+  
+    // Step 3: Insert the withdrawal request into pending_withdrawals table
+    db.query(query, queryParams, (err, result) => {
+        if (err) {
+            console.error('Error inserting withdrawal request:', err);  // Check for database query errors
+            return res.status(500).json({ message: 'Error processing withdrawal request.' });
+        }
+
+        if (result.affectedRows === 0) {
+            console.log("No rows inserted, something went wrong.");
+            return res.status(500).json({ message: 'Error inserting withdrawal into the database.' });
+        }
+        
+        console.log('Withdrawal request inserted successfully with ID:', result.insertId);
+        res.json({ message: 'Withdrawal request submitted successfully.' });
+    });
+});
+
+
+
+
+
+
+
+// Global error handlers for unhandled errors
+process.on('uncaughtException', (err) => {
+    console.error('Unhandled exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled rejection at:', promise, 'reason:', reason);
+});
 
 
 
@@ -440,6 +519,16 @@ app.get('/api/user-info', (req, res) => {
 
 
 
+
+
+
+
+
+
+app.use((req, res, next) => {
+    req.setTimeout(500000);  // Adjust as necessary (in milliseconds)
+    next();
+});
 
 
 // Start the server

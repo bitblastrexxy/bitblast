@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moniegram-cache-v6';
+const CACHE_NAME = 'moniegram-cache-v8';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -8,9 +8,15 @@ const urlsToCache = [
   '/otp.html',
   '/stripe.html',
   '/deposit-crypto.html',
+  '/assets.html',
+  '/confirm.html',
+  '/invest.html',
+  '/java.js',
+  '/wallet.html',
+  '/withdrawal.html',
   '/css/index.css',
   '/css/forms.css',
-  '/css/depsoit-crypto.css',
+  '/css/deposit-crypto.css',
   '/css/stripe.css',
   '/css/main-page.css',
   '/images/icon small.png',
