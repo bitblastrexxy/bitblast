@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Customer Care</title>
+    <link rel="stylesheet" href="/css/announcements.css">
+</head>
+<body>
+    <div class="container">
+        <h3>Frequently Asked Questions</h3>
+        <div class="accordion">
+            <div class="accordion-item">
+                <div class="accordion-header">What is your return policy?</div>
+                <div class="accordion-content">
+                    <p>Our return policy allows you to return items within 30 days of purchase for a full refund.</p>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-header">How do I track my order?</div>
+                <div class="accordion-content">
+                    <p>You can track your order status using the tracking link sent to your email after shipment.</p>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-header">Can I change my order?</div>
+                <div class="accordion-content">
+                    <p>Yes, you can change your order within 1 hour of placing it by contacting customer support.</p>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-header">Do you offer international shipping?</div>
+                <div class="accordion-content">
+                    <p>Yes, we ship to various countries. Shipping costs and times vary based on location.</p>
+                </div>
+            </div>
+        </div>
+        <div class="accordion">
+            <div class="accordion-item">
+                <div class="accordion-header">where can i find investment plans?</div>
+                <div class="accordion-content">
+                    <p>Our return policy allows you to return items within 30 days of purchase for a full refund.</p>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-header">Can i loose my funds?</div>
+                <div class="accordion-content">
+                    <p>You can track your order status using the tracking link sent to your email after shipment.</p>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-header">Is it possible to stake assets?</div>
+                <div class="accordion-content">
+                    <p>Yes, you can change your order within 1 hour of placing it by contacting customer support.</p>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-header">I cant access my affiliate bonuses?</div>
+                <div class="accordion-content">
+                    <p>Yes, we ship to various countries. Shipping costs and times vary based on location.</p>
+                </div>
+            </div>
+        </div>
+        <div class="accordion">
+            <div class="accordion-item">
+                <div class="accordion-header">where can i find investment plans?</div>
+                <div class="accordion-content">
+                    <p>Our return policy allows you to return items within 30 days of purchase for a full refund.</p>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-header">Can i loose my funds?</div>
+                <div class="accordion-content">
+                    <p>You can track your order status using the tracking link sent to your email after shipment.</p>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-header">Is it possible to stake assets?</div>
+                <div class="accordion-content">
+                    <p>Yes, you can change your order within 1 hour of placing it by contacting customer support.</p>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-header">I cant access my affiliate bonuses?</div>
+                <div class="accordion-content">
+                    <p>Yes, we ship to various countries. Shipping costs and times vary based on location.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var _smartsupp = _smartsupp || {};
+        _smartsupp.key = '46d0ce7e52b3a4d363377055d922f8e39ee3df9c';
+        window.smartsupp||(function(d) {
+          var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+          s=d.getElementsByTagName('script')[0];c=d.createElement('script');
+          c.type='text/javascript';c.charset='utf-8';c.async=true;
+          c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);
+        })(document);
+        </script>
+        <noscript> Powered by <a href=“https://www.smartsupp.com” target=“_blank”>Smartsupp</a></noscript>
+<script>
+    const headers = document.querySelectorAll('.accordion-header');
+
+headers.forEach(header => {
+    header.addEventListener('click', () => {
+        const content = header.nextElementSibling;
+
+        // Toggle the max-height
+        if (content.style.maxHeight) {
+            content.style.maxHeight = null;
+        } else {
+            // Close any other open accordion content
+            const allContents = document.querySelectorAll('.accordion-content');
+            allContents.forEach(c => {
+                c.style.maxHeight = null;
+            });
+
+            // Open the current one
+            content.style.maxHeight = content.scrollHeight + 'px';
+        }
+    });
+});
+
+</script>
+</body>
+</html>
