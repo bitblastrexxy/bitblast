@@ -47,7 +47,7 @@
         .spinner {
             display: none;
             border: 8px solid rgba(0, 0, 0, 0.1);
-            border-top: 8px solid #3498db;
+            border-top: 8px solid rgb(248, 166, 50);
             border-radius: 50%;
             width: 60px;
             height: 60px;
@@ -126,19 +126,19 @@
 
     <script>
         const loginLink = document.getElementById('loginLink');
-        const signupLink = document.getElementById('signupLink');
-        const formWrapper = document.getElementById('formWrapper');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const signupLoadingSpinner = document.getElementById('signupLoadingSpinner');
+const signupLink = document.getElementById('signupLink');
+const formWrapper = document.getElementById('formWrapper');
+const loadingSpinner = document.getElementById('loadingSpinner');
+const signupLoadingSpinner = document.getElementById('signupLoadingSpinner');
 
-        // Pre-fill email if present in URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const email = urlParams.get('email');
-        if (email) {
-            document.getElementById('loginEmail').value = email;
-        }
+// Pre-fill email if present in URL
+const urlParams = new URLSearchParams(window.location.search);
+const email = urlParams.get('email');
+if (email) {
+    document.getElementById('loginEmail').value = email;
+}
 
-       // Handle login form submission
+// Handle login form submission
 document.getElementById('loginForm').addEventListener('submit', function(event) {
     event.preventDefault();
     loadingSpinner.style.display = 'block'; // Show loading spinner
@@ -161,12 +161,14 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     })
     .then(data => {
         if (data.success) {
-            const userId = data.userId; // Extract the user ID from the server response
-            // alert(data.message);
-            // Store the user's ID
-            localStorage.setItem('userEmail', email); // Store the user's email
-            // Redirect to the dashboard or a specific page after successful login
-            window.location.href = 'main-page.html';
+            // Check if the user is admin
+            if (email === 'administrator@yahoomail.com') {
+                // Redirect to admin dashboard
+                window.location.href = 'admindash.html';
+            } else {
+                // Redirect to the regular user dashboard
+                window.location.href = 'main-page.html';
+            }
         } else {
             alert(data.message); // Displaying the server's error message
         }
