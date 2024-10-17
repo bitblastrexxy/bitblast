@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promo Page</title>
+    <link rel="stylesheet" href="/css/promo.css">
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="promo-hero">
+        <div class="hero-content">
+            <h1>Unlock Exclusive Rewards</h1>
+            <p>Don’t miss out on our limited-time promotions and special offers!</p>
+            <a href="invest.html">
+                <button class="cta-button">Claim Offer Now</button>
+            </a>
+            <p class="promo-timer">Offer ends in: <span id="timer">02:14:35</span></p>
+        </div>
+    </section>
+
+    <!-- Promo Details Section -->
+    <section class="promo-details">
+        <h2>Current Promotions</h2>
+        <div class="promo-card">
+            <h3>Double Your First Deposit</h3>
+            <p>Make your first $300 deposit today and receive a 100% bonus.</p>
+            <p><strong>Expires:</strong> December 31st, 2024</p>
+            <a href="stripe.html"><button class="cta-button">Deposit Now</button></a>
+        </div>
+        <div class="promo-card">
+            <h3>Refer & Earn</h3>
+            <p>Invite friends to join and earn 5% on their first deposit.</p>
+            <p><strong>Expires:</strong> Ongoing</p>
+            <a href="affiliate.html">
+                <button class="cta-button">Refer Now</button>
+            </a>
+        </div>
+    </section>
+
+    <!-- Steps to Participate -->
+    <section class="promo-steps">
+        <h3>How to Participate</h3>
+        <ol>
+            <li>Create an account and complete your KYC verification.</li>
+            <li>Make a deposit or refer friends to join the platform.</li>
+            <li>Claim your rewards instantly or track your bonuses in your dashboard.</li>
+        </ol>
+    </section>
+
+    <!-- Testimonials/Success Stories -->
+    <section class="promo-testimonials">
+        <h3>What Our Users Say</h3>
+        <div class="testimonial">
+            <p>"Thanks to the referral program, I’ve earned over $500 in bonuses!"</p>
+            <p>- Anthon</p>
+        </div>
+        <div class="testimonial">
+            <p>"The double deposit bonus helped me start investing bigger. Amazing deals!"</p>
+            <p>- Trader</p>
+        </div>
+    </section>
+
+    <!-- Promo Terms & Conditions -->
+    <section class="promo-terms">
+        <h3>Terms and Conditions</h3>
+        <ul>
+            <li>All promotions are valid for a limited time only unless stated otherwise.</li>
+            <li>To qualify for bonuses, users must complete their KYC verification.</li>
+            <li>Referral bonuses are paid out after the referred user makes a qualifying deposit.</li>
+        </ul>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="promo-faq">
+        <h3>Frequently Asked Questions</h3>
+        <details>
+            <summary>How do I claim my bonus?</summary>
+            <p>Simply follow the steps outlined above and track your bonus in your dashboard.</p>
+        </details>
+        <details>
+            <summary>Can I combine multiple promotions?</summary>
+            <p>No, each promotion is separate, and rewards cannot be combined.</p>
+        </details>
+    </section>
+    <br><br><br>
+
+<script>
+    // Countdown Timer for Promo
+function startTimer(duration, display) {
+    let timer = duration, hours, minutes, seconds;
+    setInterval(() => {
+        hours = Math.floor(timer / 3600);
+        minutes = Math.floor((timer % 3600) / 60);
+        seconds = Math.floor(timer % 60);
+
+        display.textContent = `${hours}:${minutes}:${seconds}`;
+
+        if (--timer < 0) {
+            timer = duration;
+        }
+    }, 1000);
+}
+
+window.onload = () => {
+    const promoEndInSeconds = 7200; // Example: 2-hour promo
+    const display = document.querySelector('#timer');
+    startTimer(promoEndInSeconds, display);
+};
+
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+*{
+    box-sizing: border-box;
+    overflow-x: hidden;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    
+    background: linear-gradient(90deg, rgb(255, 255, 255), rgba(251, 225, 225, 0.574), rgba(200, 233, 245, 0.641), #fdf0ffa2), rgb(225, 225, 225);
+}
+
+.promo-hero {
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    padding: 50px 20px;
+}
+
+.hero-content h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.hero-content p {
+    font-size: 18px;
+}
+
+h3{
+    margin-left: 2rem;
+}
+
+.cta-button {
+    background-color: #ff9800;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.promo-details {
+    padding: 30px;
+    text-align: center;
+}
+
+.promo-card {
+    background-color: white;
+    padding: 20px;
+    margin: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.promo-steps ol {
+    list-style-type: decimal;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+}
+
+.promo-testimonials .testimonial {
+    background-color: white;
+    padding: 20px;
+    margin: 10px;
+    border-radius: 10px;
+    font-style: italic;
+}
+
+details{
+    margin-left: 1rem;
+}

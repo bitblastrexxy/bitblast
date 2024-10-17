@@ -540,9 +540,100 @@ app.post('/api/assets', async (req, res) => {
 
 
 
+app.get('/get-user-profile', async (req, res) => {
+    console.log(req.query);  // Add this to debug
+    const email = req.query.email;
+    try {
+        const [rows] = await db.execute('SELECT fullName, phone, address, email, profile_image FROM users WHERE email = ?', [email]);
+        if (rows.length > 0) {
+            res.json({ success: true, ...rows[0] });
+        } else {
+            res.json({ success: false, message: "User not found." });
+        }
+    } catch (err) {
+        console.error('Error:', err);  // Log the error to debug
+        res.json({ success: false, message: "Error fetching profile." });
+    }
+});
+
+
+app.post('/update-profile', async (req, res) => {
+    const { fullName, phone, address, current_password, new_password, confirm_password, email } = req.body;
+
+    try {
+        // Validate current password if user tries to change it
+        if (current_password && new_password && confirm_password) {
+            const [user] = await db.execute('SELECT password FROM users WHERE email = ?', [email]);
+            if (!bcrypt.compareSync(current_password, user[0].password)) {
+                return res.json({ success: false, message: "Incorrect current password." });
+            }
+            if (new_password !== confirm_password) {
+                return res.json({ success: false, message: "New passwords do not match." });
+            }
+            const hashedPassword = bcrypt.hashSync(new_password, 10);
+            await db.execute('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
+        }
+
+        // Update other fields
+        await db.execute('UPDATE users SET fullName = ?, phone = ?, address = ? WHERE email = ?', [fullName, phone, address, email]);
+        res.json({ success: true, message: "Profile updated successfully." });
+    } catch (err) {
+        res.json({ success: false, message: "Error updating profile." });
+    }
+});
+
+app.post('/update-profile-picture', async (req, res) => {
+    const { email } = req.body;
+    const profileImage = req.files.profile_image;
+
+    try {
+        // Save profile image to disk and store its path in the database
+        const imagePath = `/uploads/${profileImage.name}`;
+        profileImage.mv(`./public/uploads/${profileImage.name}`);
+        await db.execute('UPDATE users SET profile_image = ? WHERE email = ?', [imagePath, email]);
+
+        res.json({ success: true, message: "Profile picture updated.", profile_image_url: imagePath });
+    } catch (err) {
+        res.json({ success: false, message: "Error updating profile picture." });
+    }
+});
 
 
 
+app.get('/api/stocks', (req, res) => {
+    const options = {
+        method: 'GET',
+        hostname: 'yahoo-finance-api-data.p.rapidapi.com',
+        port: null,
+        path: '/search/list-detail?id=a4f8a58b-e458-44fe-b304-04af382a364e&limit=10&offset=0',
+        headers: {
+            'x-rapidapi-key': '665e2072eemsh27d4020afed09f6p1e7c0fjsn1c3c3bfeedde', // Replace with your key
+            'x-rapidapi-host': 'yahoo-finance-api-data.p.rapidapi.com'
+        }
+    };
+
+    // Use a different variable name to avoid conflicts
+    const stockRequest = https.request(options, (apiRes) => {
+        let chunks = [];
+
+        apiRes.on('data', (chunk) => {
+            chunks.push(chunk);
+        });
+
+        apiRes.on('end', () => {
+            const body = Buffer.concat(chunks);
+            const result = JSON.parse(body.toString());
+            res.json(result); // Send data to the front-end
+        });
+    });
+
+    stockRequest.on('error', (e) => {
+        console.error(`Problem with request: ${e.message}`);
+        res.status(500).send('Error fetching stock data');
+    });
+
+    stockRequest.end();
+});
 
 
 

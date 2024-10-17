@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affiliate Program</title>
+    <link rel="stylesheet" href="/css/affiliate.css">
+</head>
+<body>
+    <div class="affiliate-page">
+        <!-- Header Section -->
+        <header class="affiliate-header">
+            <h3>Invite Friends, Earn Rewards!</h3>
+            <p>Share your referral link and earn exciting rewards when your friends join.</p>
+        </header>
+
+        <!-- Referral Progress -->
+        <section class="referral-progress">
+            <h3>Your Referral Progress</h3>
+
+            <p><strong>0</strong> referrals out of <strong>20</strong> needed for the next reward.</p>
+        </section>
+
+        <!-- Invite Friends Section -->
+        <section class="invite-friends">
+            <h3>Invite Your Friends</h3>
+            <div class="referral-link">
+                <input type="text" id="referralLink" value="https://yourapp.com/referral/abc123" readonly>
+                <button id="copyLinkBtn">Copy Referral Link</button>
+            </div>
+
+            <!-- Social Sharing Options -->
+            <div class="share-options">
+                <h3>Or share via</h3>
+                <button class="share-btn" data-platform="whatsapp">WhatsApp</button>
+                <button class="share-btn" data-platform="facebook">Facebook</button>
+                <button class="share-btn" data-platform="twitter">Twitter</button>
+                <button class="share-btn" data-platform="email">Email</button>
+            </div>
+        </section>
+    </div>
+    <br>
+    <div class="affiliate-page">
+        <p class="text1">
+            Welcome to our Affiliate Program! As part of our initiative to expand our community and reward loyal users, we’ve crafted an exclusive referral program that allows you to earn yearly payouts, expand your network, and become an integral part of our company’s success. Below, we outline the terms, conditions, and processes required to qualify for this program. <br><br>
+            <h3>How It Works</h3>
+<ul>
+    <li>
+        
+Register and Complete Your KYC: To become eligible for the affiliate program, you must first complete your own registration on our platform and successfully verify your identity through our KYC (Know Your Customer) process. This ensures that all participants in the program are legitimate members of the community.
+    </li>
+    <li>
+        Refer a Minimum of 10 People: After completing your registration, you can start inviting your friends, family, and network to join the platform. Once you have referred at least 10 people, who have also completed their registration and KYC, you will qualify for the next stage of the program.
+    </li>
+    <li>
+        Create a WhatsApp Group for Your Referrals: To help build a closer community within your network, you will need to create a WhatsApp group that includes the people you have referred. This group will serve as an essential communication tool where you can share updates, strategies, and information about the platform. The goal is to create a thriving community where you expand your chain and foster engagement.
+    </li>
+    <li>
+        Yearly Payout Qualification: Once you have successfully referred at least 10 individuals and set up your WhatsApp group, you are automatically qualified for yearly payouts. This payout is designed to reward you as if you are a stakeholder of the company, recognizing your efforts in building and maintaining your referral network. You will receive this payout annually, regardless of whether you continue investing on the platform or not.
+    </li>
+    <li>
+        Stakeholder-Like Benefits:
+Upon qualifying for the yearly payout, it will seem like you have become a stakeholder of the company, meaning you are eligible to share in the rewards of our growing community. The more active your chain is, the more valuable your participation becomes, allowing you to enjoy these payouts consistently over time.
+    </li>
+    <li>
+        The Catch: Losing Members in Your Chain:
+However, to maintain the integrity of your stake in the program, it is essential to keep your referrals engaged. If any member of your chain leaves, 10% of the current shares allocated to your payout will be deducted. For example, if one or more of your 10 referrals decides to withdraw from the platform or stop participating, your payout will be reduced by 10% for each individual who leaves. This policy encourages you to maintain and nurture the community you’ve built.
+    </li>
+</ul>
+        </p>
+        <p class="text2">
+            Complete Registration & KYC: Ensure your own account is fully verified.
+Refer 10 People: Successfully invite at least 10 people who also complete their KYC.
+WhatsApp Group: Create and manage a WhatsApp group for your referrals.
+Maintain Chain: Keep your referrals engaged to avoid any deductions.
+Yearly Payouts: Receive annual payouts as long as your network stays intact.
+By following these steps and keeping your referrals engaged, you will secure a steady stream of rewards, creating long-term value for both yourself and the platform. <br><br>
+
+<h3>Affiliate Program Disclaimer</h3>
+Please note that the payouts and share allocations are based on current company performance and participation metrics. Changes to the program may occur over time as the platform evolves, and members will be notified accordingly.
+        </p>
+    </div>
+
+<script>
+        // Copy referral link to clipboard
+document.getElementById('copyLinkBtn').addEventListener('click', function() {
+    const referralLink = document.getElementById('referralLink');
+    referralLink.select();
+    referralLink.setSelectionRange(0, 99999); // For mobile devices
+    document.execCommand('copy');
+    alert('Referral link copied!');
+});
+
+// Social sharing buttons functionality
+const shareButtons = document.querySelectorAll('.share-btn');
+shareButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const platform = button.getAttribute('data-platform');
+        const referralLink = document.getElementById('referralLink').value;
+        let shareUrl = '';
+
+        switch (platform) {
+            case 'whatsapp':
+                shareUrl = `https://api.whatsapp.com/send?text=Join me on this awesome app! Sign up here: ${referralLink}`;
+                break;
+            case 'facebook':
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${referralLink}`;
+                break;
+            case 'twitter':
+                shareUrl = `https://twitter.com/intent/tweet?text=Join%20me%20on%20this%20awesome%20app!%20Sign%20up%20here:%20${referralLink}`;
+                break;
+            case 'email':
+                shareUrl = `mailto:?subject=Join%20me%20on%20this%20awesome%20app&body=Sign%20up%20here:%20${referralLink}`;
+                break;
+        }
+        window.open(shareUrl, '_blank');
+    });
+});
+
+</script>
+</body>
+</html>

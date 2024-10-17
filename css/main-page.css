@@ -290,6 +290,15 @@ button img {
     justify-content: space-between;
 }
 
+.functions1 a{
+    text-decoration: none;
+}
+
+.functions1 .image{
+    display: flex;
+    flex-direction: column;
+}
+
 .functions1 img{
     width: 36px;
     height: 36px;
@@ -297,9 +306,25 @@ button img {
     padding: 5px;
 }
 
+.functions1 p{
+    color: rgba(255, 255, 255, 0.417);
+    font-size: 10px;
+    text-align: center;
+    margin-top: 2px;
+}
+
 .functions2{
     display: flex;
     justify-content: space-between;
+}
+
+.functions2 a{
+    text-decoration: none;
+}
+
+.functions2 .image{
+    display: flex;
+    flex-direction: column;
 }
 
 .functions2 img{
@@ -307,6 +332,13 @@ button img {
     height: 36px;
     background-color: rgb(255, 166, 42);
     padding: 5px;
+}
+
+.functions2 p{
+    color: rgba(255, 255, 255, 0.417);
+    font-size: 10px;
+    text-align: center;
+    margin-top: 2px; 
 }
 
 

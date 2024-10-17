@@ -42,16 +42,56 @@
 
     <section class="functions">
         <div class="functions1">
-            <img src="./images/follow_15535212.png" alt="">
-            <img src="./images/delete_13911643.png" alt="">
-            <img src="./images/market_13248824.png" alt="">
-            <img src="./images/moniegram logo.png" alt="">
+            <a href="affiliate.html">
+                <div class="image">
+                    <img src="./images/follow_15535212.png" alt="">
+                    <p>Affiliate</p>
+                </div>
+            </a>
+           <a href="promo.html">
+            <div class="image">
+                <img src="./images/delete_13911643.png" alt="">
+                <p>Promo</p>
+            </div>
+           </a>
+           <a href="loans">
+            <div class="image">
+                <img src="./images/market_13248824.png" alt="">
+                <p>Loan</p>
+            </div>
+           </a>
+            <a href="dual-investments.html">
+                <div class="image">
+                    <img src="./images/moniegram logo.png" alt="">
+                    <p>Dual <br> Invest</p>
+                </div>
+            </a>
         </div> 
         <div class="functions2">
-            <img src="./images/wallet_6948492.png" alt="">
-            <img src="./images/notification_12998251.png" alt="">
-            <img src="./images/home_15382980.png" alt="">
-            <img src="./images/user_9303328.png" alt="">
+            <a href="long-term.html">
+                <div class="image">
+                    <img src="./images/wallet_6948492.png" alt="">
+                    <p>Long term <br>earning</p>
+                </div>
+            </a>
+            <a href="announcements.html">
+                <div class="image">
+                    <img src="./images/notification_12998251.png" alt="">
+                    <p>announ <br> cements</p>
+                </div>
+            </a>
+            <a href="affiliate.html">
+                <div class="image">
+                    <img src="./images/home_15382980.png" alt="">
+                    <p>Invite</p>
+                </div>
+            </a>
+            <a href="stripe.html">
+                <div class="image">
+                    <img src="./images/user_9303328.png" alt="">
+                    <p>Fiat <br> Deposit</p>
+                </div>
+            </a>
         </div>
     </section>
     <div class="spinner" id="loadingSpinner"></div>
@@ -189,7 +229,7 @@
             <li><a href="main-page.html"><img src="./images/home_15382980.png" alt="Home Icon"><span>Home</span></a></li>
             <li><a href="#"><img src="./images/market_13248824.png" alt="Services Icon" style="background-color: rgb(255, 174, 0); border-radius: 20rem;"><span>Chat</span></a></li>
             <li><a href="wallet.html"><img src="./images/money-management_5166084.png" alt="About Icon" style="border-radius: 20rem; background-color: rgb(255, 174, 0);"><span>Wallet</span></a></li>
-            <li><a href="#"><img src="./images/user_9303328.png" alt="About Icon" style="border-radius: 20rem;"><span>Profile</span></a></li>
+            <li><a href="profile.html"><img src="./images/user_9303328.png" alt="About Icon" style="border-radius: 20rem;"><span>Profile</span></a></li>
             <li><a href="assets.html"><img src="./images/wallet_6948492.png" alt="Contact Icon"><span>Assets</span></a></li>
         </ul>
     </nav>
@@ -259,11 +299,8 @@ const loadingSpinner = document.getElementById('loadingSpinner');
 
     // Handle click events on deposit options
 document.getElementById('buyDollarOption').addEventListener('click', () => {
-    // Show the spinner
     loadingSpinner.style.display = 'block';
-
-    // Simulate page navigation with a delay (replace with actual page navigation logic)
-    window.location.href = 'stripe.html'; // Replace with your actual page navigation
+    window.location.href = 'stripe.html'; 
 });
 
 document.getElementById('depositCryptoOption').addEventListener('click', () => {
@@ -278,6 +315,7 @@ document.getElementById('depositCryptoOption').addEventListener('click', () => {
 window.addEventListener('load', function () {
     loadingSpinner.style.display = 'none';
 });
+
 
 
 const depositButton = document.getElementById('depositButton');
