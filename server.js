@@ -15,8 +15,12 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 app.use(cors()); // Enable CORS
+app.use(router);
 app.use(express.json()); // Parse JSON bodies
 app.use(express.static(path.join(__dirname)));
+app.use(express.static(__dirname));
+
+
 
 // MySQL database connection
 const db = mysql.createPool({
@@ -649,7 +653,31 @@ app.get('/api/stocks', (req, res) => {
 
 
 
-
+app.post('/verify-payment', async (req, res) => {
+    const { reference, amount } = req.body;
+    const paystackSecretKey = 'sk_live_9531183b8354a342dbe10d01e3abee48e6d9f07e';  // replace with your live secret key
+  
+    try {
+      const response = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`
+        }
+      });
+  
+      const paymentData = response.data.data;
+  
+      if (paymentData && paymentData.status === 'success' && paymentData.amount / 100 === amount && paymentData.currency === 'USD') {
+        // Successful payment in USD
+        return res.json({ success: true, message: 'Payment verified successfully.' });
+      } else {
+        return res.json({ success: false, message: 'Payment verification failed.' });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Server error during payment verification.' });
+    }
+  });
+  
 
 
 
@@ -660,47 +688,199 @@ app.get('/api/stocks', (req, res) => {
 //admin
 
 
-// // Route to get the count of pending deposits
-// app.get('/api/admin/pending-deposits/count', (req, res) => {
-//     pool.query(
-//         'SELECT COUNT(*) AS count FROM pending_deposits',
-//         (error, results) => {
-//             if (error) {
-//                 console.error('Error fetching pending deposits count:', error);
-//                 return res.status(500).json({ message: 'Error fetching pending deposits count' });
-//             }
-//             const count = results[0].count;
-//             res.json({ count });
-//         }
-//     );
-// });
+// Route to get the count of pending deposits
+app.get('/api/admin/pending-deposits', async (req, res) => {
+    try {
+        const [deposits] = await db.query(
+            `SELECT id, email, amount, plan_name, status, date 
+             FROM deposits 
+             WHERE status = 'pending'`
+        );
+        res.json(deposits); // Send the deposits list to the frontend
+    } catch (error) {
+        console.error('Error fetching pending deposits:', error);
+        res.status(500).json({ message: 'Error fetching pending deposits' });
+    }
+});
 
-// // Route to get all pending withdrawals for admin
-// app.get('/api/admin/pending-withdrawals', (req, res) => {
-//     // Fetch wallet and bank details along with other necessary fields
-//     const query = `
-//       SELECT id, username, amount, method, wallet_address, bank_name, account_name, account_number, status 
-//       FROM pending_withdrawals 
-//       WHERE status = ?`;
-    
-//     pool.query(query, ['pending'], (error, results) => {
-//       if (error) {
-//         console.error('Error fetching pending withdrawals:', error);
-//         return res.status(500).json({ message: 'Error fetching pending withdrawals' });
-//       }
-//       res.json(results);
-//     });
-//   });
 
-//   app.get('/api/pending-withdrawals', (req, res) => {
-//     pool.query('SELECT * FROM pending_withdrawals', (error, results) => {
-//         if (error) {
-//             console.error('Error fetching pending withdrawals:', error);
-//             return res.status(500).json({ message: 'Error fetching pending withdrawals' });
-//         }
-//         res.json(results);
-//     });
-//   });
+// Approve a deposit
+router.post('/api/admin/pending-deposits/approve/:id', async (req, res) => {
+    const depositId = req.params.id;
+
+    try {
+        // Fetch deposit details
+        const [depositResult] = await db.query('SELECT * FROM deposits WHERE id = ?', [depositId]);
+        if (!depositResult.length) {
+            return res.status(404).json({ message: 'Deposit not found' });
+        }
+
+        const { email, amount, plan_name, investment_start_date } = depositResult[0];
+
+        // If plan_name exists, fetch the plan details; otherwise, set default values
+        let planDetails = {};
+        let interest = 0;
+        let startDate = new Date();
+        let endDate = new Date();
+        if (plan_name) {
+            // Fetch plan details
+            const [planResult] = await db.query('SELECT duration, profit FROM plans WHERE name = ?', [plan_name]);
+            if (planResult.length) {
+                const { duration, profit } = planResult[0];
+                planDetails = { plan_name, profit };
+                interest = amount * (profit / 100);
+                startDate = new Date(investment_start_date);
+                endDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
+            } else {
+                return res.status(404).json({ message: 'Plan not found' });
+            }
+        } else {
+            // For wallet deposits, set default values
+            planDetails = { plan_name: 'Wallet Deposit', profit: 0 };
+            interest = 0; // No interest for wallet deposit
+            startDate = new Date();
+            endDate = new Date();
+        }
+
+        // Update deposit status
+        await db.query('UPDATE deposits SET status = ? WHERE id = ?', ['approved', depositId]);
+
+        // Insert into active deposits
+        await db.query(
+            `INSERT INTO active_deposits (email, amount, interest, plan_name, profit, investment_start_date, investment_end_date) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [email, amount, interest, planDetails.plan_name, planDetails.profit, startDate, endDate]
+        );
+
+        res.json({ message: 'Deposit approved and moved to active deposits successfully' });
+    } catch (error) {
+        console.error('Error approving deposit:', error);
+        res.status(500).json({ message: 'Error approving deposit' });
+    }
+});
+
+
+
+
+
+// Reject a deposit
+app.post('/api/admin/reject-deposit', async (req, res) => {
+    const { depositId } = req.body;
+
+    try {
+        // Step 1: Check if deposit exists
+        const [depositResult] = await db.query('SELECT * FROM deposits WHERE id = ?', [depositId]);
+        if (!depositResult.length) {
+            return res.status(404).json({ message: 'Deposit not found' });
+        }
+
+        // Step 2: Move deposit to rejected_deposits
+        await db.query(
+            `INSERT INTO rejected_deposits 
+             (id, email, amount, status, date) 
+             SELECT id, email, amount, status, date FROM deposits WHERE id = ?`,
+            [depositId]
+        );
+
+        // Step 3: Delete deposit from deposits table
+        await db.query('DELETE FROM deposits WHERE id = ?', [depositId]);
+
+        res.json({ message: 'Deposit rejected successfully' });
+    } catch (error) {
+        console.error('Error rejecting deposit:', error);
+        res.status(500).json({ message: 'Error rejecting deposit' });
+    }
+});
+
+
+
+
+app.get('/api/pending-withdrawals', async (req, res) => {
+    try {
+        const [results] = await db.query('SELECT * FROM pending_withdrawals WHERE status = ?', ['Pending']);
+        res.status(200).json(results);
+    } catch (error) {
+        console.error('Error fetching pending withdrawals:', error);
+        res.status(500).json({ error: 'Failed to fetch pending withdrawals' });
+    }
+});
+
+
+
+// Approve Withdrawal
+app.post('/api/withdrawals/approve', async (req, res) => {
+    const { id } = req.body;
+
+    try {
+        const [result] = await db.query(
+            'UPDATE pending_withdrawals SET status = ?, approved_date = NOW() WHERE id = ?',
+            ['Approved', id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Withdrawal not found' });
+        }
+
+        res.status(200).json({ message: 'Withdrawal approved successfully' });
+    } catch (error) {
+        console.error('Error approving withdrawal:', error);
+        res.status(500).json({ message: 'Error approving withdrawal' });
+    }
+});
+
+// Reject Withdrawal and Refund User
+app.post('/api/withdrawals/reject', async (req, res) => {
+    const { id } = req.body;
+
+    try {
+        // Start a transaction
+        await db.query('START TRANSACTION');
+
+        // Fetch withdrawal details
+        const [withdrawal] = await db.query('SELECT email, amount FROM pending_withdrawals WHERE id = ?', [id]);
+
+        if (withdrawal.length === 0) {
+            return res.status(404).json({ message: 'Withdrawal not found' });
+        }
+
+        const { email, amount } = withdrawal[0];
+
+        // Update withdrawal status to Rejected
+        const [updateWithdrawal] = await db.query(
+            'UPDATE pending_withdrawals SET status = ? WHERE id = ?',
+            ['Rejected', id]
+        );
+
+        if (updateWithdrawal.affectedRows === 0) {
+            throw new Error('Failed to update withdrawal status');
+        }
+
+        // Refund the amount to the user's balance
+        const [updateBalance] = await db.query(
+            'UPDATE users SET balance = balance + ? WHERE email = ?',
+            [amount, email]
+        );
+
+        if (updateBalance.affectedRows === 0) {
+            throw new Error('Failed to update user balance');
+        }
+
+        // Commit the transaction
+        await db.query('COMMIT');
+        res.status(200).json({ message: 'Withdrawal rejected and refunded successfully' });
+    } catch (error) {
+        // Rollback transaction on error
+        await db.query('ROLLBACK');
+        console.error('Error rejecting withdrawal:', error);
+        res.status(500).json({ message: 'Error rejecting withdrawal and refunding amount' });
+    }
+});
+
+
+
+
+
+
 
 
 // // Route to get the total number of users
@@ -715,20 +895,146 @@ app.get('/api/stocks', (req, res) => {
 //   });
   
 
-// // Route to get all users' details
-// app.get('/api/admin/users', (req, res) => {
-//     const query = `
-//         SELECT id, full_name, email, username, bitcoin_address, referral_code, created_at, balance, total_withdrawals, total_deposits
-//         FROM users
-//     `;
-//     pool.query(query, (error, results) => {
-//         if (error) {
-//             console.error('Error fetching user details:', error);
-//             return res.status(500).json({ message: 'Error fetching user details.' });
-//         }
-//         res.json(results);
-//     });
-//   });
+// Route to get all users' details
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const query = `
+            SELECT id, fullName, email, username, bitcoin_address, referrer, createdAt, updatedAt, otp, verified, phone, address, profile_image, balance
+            FROM users
+        `;
+        // Use db pool to execute the query
+        const [results] = await db.query(query);
+        res.json(results); // Send the results back as JSON
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        res.status(500).json({ message: 'Error fetching user details.' });
+    }
+});
+
+
+
+app.get('/api/admin/transactions', async (req, res) => {
+    const query = `
+        SELECT id, email, plan_name, plan_profit, plan_principle_return, 
+               plan_credit_amount, plan_deposit_fee, plan_debit_amount, 
+               deposit_method, transaction_date
+        FROM transactions
+    `;
+
+    try {
+        const [results] = await db.query(query);  // Using promise-based query here
+        res.json(results);  // Send results as JSON
+    } catch (error) {
+        console.error('Error fetching transactions:', error);
+        res.status(500).json({ message: 'Error fetching transactions' });
+    }
+});
+
+
+
+app.get('/api/admin/deposits', async (req, res) => {
+    try {
+        console.log('Fetching all deposits...');
+        const query = `
+            SELECT id, email, amount, date, status, investment_start_date, investment_end_date,
+                   plan_name, plan_principle_return, plan_credit_amount, plan_deposit_fee, plan_debit_amount, deposit_method
+            FROM deposits
+        `;
+
+        // Execute the query to fetch all deposits
+        const [results] = await db.query(query);
+        console.log('Results:', results);
+
+        // Send the results as a JSON response
+        res.json(results);
+    } catch (error) {
+        console.error('Error fetching deposits:', error);
+        res.status(500).json({ message: 'Error fetching deposits' });
+    }
+});
+
+
+
+app.get('/api/admin/withdrawals', async (req, res) => {
+    try {
+        console.log('Fetching all withdrawals...');
+        const query = `
+            SELECT id, email, amount, status, request_date, approved_date, wallet_address, method,
+                   bank_name, account_name, account_number
+            FROM pending_withdrawals
+        `;
+
+        // Execute the query to fetch all withdrawals
+        const [results] = await db.query(query);
+        console.log('Results:', results);
+
+        // Send the results as a JSON response
+        res.json(results);
+    } catch (error) {
+        console.error('Error fetching withdrawals:', error);
+        res.status(500).json({ message: 'Error fetching withdrawals' });
+    }
+});
+
+
+// Handle the newsletter send request
+app.post('/api/admin/send-newsletter', async (req, res) => {
+    const { subject, content, targetGroups } = req.body;
+
+    try {
+        const users = [];
+        let query = '';
+
+        for (const group of targetGroups) {
+            if (group === 'allUsers') {
+                query = 'SELECT email FROM users'; // Fetch all users' emails
+            } else if (group === 'noInvestments') {
+                query = `SELECT email FROM users WHERE id NOT IN 
+                         (SELECT user_id FROM investments)`; // Users with no investments
+            } else if (group === 'zeroBalance') {
+                query = 'SELECT email FROM users WHERE balance = 0'; // Users with zero balance
+            } else if (group === 'activeInvestments') {
+                // Fetch users with active deposits from the active_deposits table
+                query = `
+        SELECT u.email 
+        FROM users u
+        JOIN active_deposits ad ON u.email = ad.email
+        WHERE ad.investment_end_date > NOW()`; // Active investments (from active_deposits table)
+            } else if (group.startsWith('specificPlan:')) {
+                const planName = group.split(':')[1];
+                query = `
+                    SELECT u.email 
+                    FROM users u
+                    JOIN active_deposits ad ON u.email = ad.email
+                    WHERE ad.plan_name = ?`;
+                const [result] = await db.query(query, [planName]);
+                users.push(...result.map(user => user.email));
+                continue;
+            }
+            
+
+            const [result] = await db.query(query);
+            users.push(...result.map(user => user.email));
+        }
+
+        // Remove duplicate emails
+        const uniqueEmails = [...new Set(users)];
+
+        // Send email to each user
+        for (const email of uniqueEmails) {
+            await sendEmail(email, subject, content);
+        }
+
+        res.status(200).json({ message: 'Newsletter sent successfully' });
+    } catch (error) {
+        console.error('Error sending newsletter:', error);
+        res.status(500).json({ message: 'Failed to send the newsletter' });
+    }
+});
+
+
+
+
 
 
 
@@ -836,80 +1142,74 @@ app.get('/api/stocks', (req, res) => {
   
 
 
-// // Route to handle adding a penalty
+// Adding penalty route
 // app.post('/api/admin/add-penalty', async (req, res) => {
 //     const { userId, penaltyAmount, penaltyType, description, authPassword } = req.body;
-  
-//     if (authPassword !== 'AdMiN') {
-//       return res.status(403).json({ success: false, message: 'Unauthorized' });
+
+//     // Check if the provided authPassword matches the admin password from environment variables
+//     if (authPassword !== process.env.ADMIN_PASSWORD) {
+//         return res.status(403).json({ success: false, message: 'Unauthorized' });
 //     }
-  
+
 //     try {
-//       // Find user by userId
-//       const [user] = await pool.promise().query('SELECT * FROM users WHERE id = ?', [userId]);
-  
-//       if (user.length === 0) {
-//         return res.status(404).json({ success: false, message: 'User not found' });
-//       }
-  
-//       // Deduct penalty from the user's balance
-//       const newBalance = user[0].balance - parseFloat(penaltyAmount);
-  
-//       // Update user's balance
-//       await pool.promise().query('UPDATE users SET balance = ? WHERE id = ?', [newBalance, userId]);
-  
-//       // Log penalty in penalties table
-//       await pool.promise().query('INSERT INTO penalties (user_id, amount, type, description) VALUES (?, ?, ?, ?)', [
-//           userId,
-//           penaltyAmount,
-//           penaltyType,
-//           description
-//       ]);
-  
-//       // Send success response
-//       res.json({ success: true });
-  
-//     } catch (error) {
-//       console.error('Error adding penalty:', error);
-//       res.status(500).json({ success: false, message: 'Server error' });
-//     }
-//   });
-  
-  
-  
-//   async function addBonus(userId, amount, description) {
-//     return new Promise((resolve, reject) => {
-//       // Fetch username based on userId
-//       pool.query('SELECT username FROM users WHERE id = ?', [userId], (err, results) => {
-//         if (err) return reject(err);
-//         if (!results.length) return reject(new Error('User not found'));
-  
-//         const username = results[0].username;
-  
-//         // Update user balance
-//         pool.query(
-//           'UPDATE users SET balance = balance + ? WHERE id = ?',
-//           [amount, userId],
-//           (err, results) => {
-//             if (err) return reject(err);
-            
-//             // Insert into transactions table
-//             pool.query(
-//               `INSERT INTO transactions (username, plan_name, plan_credit_amount, deposit_method, transaction_date) 
-//                VALUES (?, ?, ?, ?, ?)`,
-//               [username, null, amount, 'Bonus', new Date()],
-//               (err, result) => {
-//                 if (err) return reject(err);
-//                 resolve(result);
-//               }
-//             );
-//           }
+//         // Find the user by userId
+//         const [users] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+
+//         if (users.length === 0) {
+//             return res.status(404).json({ success: false, message: 'User not found' });
+//         }
+
+//         const user = users[0]; // Select the user
+
+//         // Deduct the penalty amount from the user's balance
+//         const newBalance = parseFloat(user.balance) - parseFloat(penaltyAmount);
+
+//         // Update the user's balance
+//         await db.query('UPDATE users SET balance = ? WHERE id = ?', [newBalance, userId]);
+
+//         // Log the penalty in the penalties table
+//         await db.query(
+//             'INSERT INTO penalties (user_id, amount, type, description) VALUES (?, ?, ?, ?)',
+//             [userId, penaltyAmount, penaltyType, description]
 //         );
-//       });
-//     });
-//   }
 
+//         // Send success response
+//         res.json({ success: true, message: 'Penalty added successfully.' });
+//     } catch (error) {
+//         console.error('Error adding penalty:', error);
+//         res.status(500).json({ success: false, message: 'Server error' });
+//     }
+// });
 
+  
+  
+// async function addBonus(userId, amount, description) {
+//     try {
+//         // Fetch username based on userId
+//         const [userResult] = await db.query('SELECT username FROM users WHERE id = ?', [userId]);
+
+//         if (!userResult.length) {
+//             throw new Error('User not found');
+//         }
+
+//         const username = userResult[0].username;
+
+//         // Update user balance
+//         await db.query('UPDATE users SET balance = balance + ? WHERE id = ?', [amount, userId]);
+
+//         // Insert into transactions table
+//         const [transactionResult] = await db.query(
+//             `INSERT INTO transactions (username, plan_name, plan_credit_amount, deposit_method, transaction_date) 
+//              VALUES (?, ?, ?, ?, ?)`,
+//             [username, null, amount, 'Bonus', new Date()]
+//         );
+
+//         return transactionResult;
+//     } catch (error) {
+//         console.error('Error adding bonus:', error);
+//         throw error;
+//     }
+// }
 
 //   app.post('/api/admin/add-bonus-or-investment', async (req, res) => {
 //     const { userId, amount, actionType, planId, description, authPassword } = req.body;
@@ -980,19 +1280,21 @@ app.get('/api/stocks', (req, res) => {
 
 
 
-//   app.get('/api/expiring-deposits', async (req, res) => {
-//     try {
-//         const [deposits] = await pool.promise().query(`
-//             SELECT *, DATEDIFF(investment_end_date, NOW()) AS days_left
-//             FROM active_deposits
-//             WHERE investment_end_date > NOW()
-//         `);
-//         res.json(deposits);
-//     } catch (err) {
-//         console.error('Error fetching expiring deposits:', err);
-//         res.status(500).json({ message: 'Error fetching expiring deposits' });
-//     }
-//   });
+  // Adjusted route
+app.get('/api/expiring-deposits', async (req, res) => {
+    try {
+        const [deposits] = await db.query(`
+            SELECT *, DATEDIFF(investment_end_date, NOW()) AS days_left
+            FROM active_deposits
+            WHERE investment_end_date > NOW()
+        `);
+        res.json(deposits);
+    } catch (err) {
+        console.error('Error fetching expiring deposits:', err);
+        res.status(500).json({ message: 'Error fetching expiring deposits' });
+    }
+});
+
   
 
 

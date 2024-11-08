@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moniegram-cache-v2';
+const CACHE_NAME = 'moniegram-cache-v2.5';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -15,13 +15,13 @@ const urlsToCache = [
   '/wallet.html',
   '/promo.html',
   '/announcements.html',
-  '/announcements.css',
-  '/promo.css',
+  '/css/announcements.css',
+  '/css/promo.css',
   '/affiliate.html',
-  '/affiliate.css',
+  '/css/affiliate.css',
   '/withdrawal.html',
   '/profile.html',
-  '/profile.css',
+  '/css/profile.css',
   '/css/index.css',
   '/css/forms.css',
   '/css/deposit-crypto.css',
