@@ -753,7 +753,7 @@ router.post('/create-payment-link', async (req, res) => {
                 tx_ref: `tx_${Date.now()}`, // Unique transaction reference
                 amount,
                 currency: 'USD', // Adjust this to your desired currency
-                redirect_url: 'https://yourwebsite.com/payment-callback', // Update with your callback URL
+                redirect_url: 'https://moniegram.onrender.com/main-page.html', // Update with your callback URL
                 customer: {
                     email,
                 },
