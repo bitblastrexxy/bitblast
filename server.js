@@ -458,30 +458,21 @@ app.get('/api/transactions', async (req, res) => {
 
 
 
+// Route for handling withdrawal
+app.post('/api/withdraw', async (req, res) => {
+    console.log('Withdrawal endpoint hit'); // Confirms endpoint is accessed
 
-
-
-
-// Assuming 'db' is the pool from your db.js file
-app.post('/api/withdraw', (req, res) => {
-    console.log('Withdrawal endpoint hit');
-    
     const { userEmail, amount, method, walletAddress, bankDetails } = req.body;
-  
-    console.log("Withdrawal request received for user:", userEmail);
-    console.log("Amount:", amount);
-    console.log("Withdrawal method:", method);
+    console.log("Received withdrawal request with data:", req.body); // Logs request data for debugging
 
-    // Step 0: Check if the db object is defined
     if (!db) {
         console.error('Database connection (db) is not defined.');
         return res.status(500).json({ message: 'Database connection error.' });
     }
 
+    // Prepare SQL and parameters based on withdrawal method
     let query = '';
     let queryParams = [];
-  
-    // Proceed with the withdrawal request without checking the balance
     if (method === 'bank') {
         const { bankName, accountName, accountNumber } = bankDetails;
         query = 'INSERT INTO pending_withdrawals (email, amount, status, request_date, bank_name, account_name, account_number, method) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)';
@@ -495,26 +486,126 @@ app.post('/api/withdraw', (req, res) => {
         console.log("Invalid withdrawal method.");
         return res.status(400).json({ message: 'Invalid withdrawal method selected.' });
     }
-  
-    console.log("Executing query:", query, "with params:", queryParams);  // Log the query being executed
-  
-    // Step 3: Insert the withdrawal request into pending_withdrawals table
-    db.query(query, queryParams, (err, result) => {
-        if (err) {
-            console.error('Error inserting withdrawal request:', err);  // Check for database query errors
-            return res.status(500).json({ message: 'Error processing withdrawal request.' });
+
+    try {
+        // Log the withdrawal request in the database
+        console.log("Inserting withdrawal request into database with query:", query);
+        const [result] = await db.query(query, queryParams);
+        
+        if (result.affectedRows === 0) {
+            console.log("No rows inserted for the withdrawal request.");
+            return res.status(500).json({ message: 'Failed to insert withdrawal request.' });
         }
 
-        if (result.affectedRows === 0) {
-            console.log("No rows inserted, something went wrong.");
-            return res.status(500).json({ message: 'Error inserting withdrawal into the database.' });
-        }
+        console.log('Withdrawal request logged successfully, ID:', result.insertId);
+
+        // Deduct the withdrawal amount from the user's balance
+        const balanceUpdateQuery = 'UPDATE users SET balance = balance - ? WHERE email = ?';
+        const balanceParams = [amount, userEmail];
+        console.log("Updating user balance with query:", balanceUpdateQuery);
         
-        console.log('Withdrawal request inserted successfully with ID:', result.insertId);
+        const [balanceUpdateResult] = await db.query(balanceUpdateQuery, balanceParams);
+
+        if (balanceUpdateResult.affectedRows === 0) {
+            console.log("Balance deduction failed, no rows updated.");
+            return res.status(500).json({ message: 'Failed to deduct balance.' });
+        }
+
+        console.log("User balance updated successfully.");
+
+        // Send a notification email to the user
+        const emailSubject = "Withdrawal Request Received";
+        const emailBody = `<p>Your withdrawal request of ${amount} has been received and is pending approval.</p>`;
+        await sendEmail(userEmail, emailSubject, emailBody);
+        console.log("Notification email sent to user:", userEmail);
+
         res.json({ message: 'Withdrawal request submitted successfully.' });
-    });
+    } catch (error) {
+        console.error('Error processing withdrawal request:', error); // Logs error for further inspection
+        res.status(500).json({ message: 'Error processing withdrawal request.' });
+    }
 });
 
+
+
+
+// // Updated withdraw route with balance deduction and email notification
+// app.post('/api/withdraw', (req, res) => {
+//     const { userEmail, amount, method, walletAddress, bankDetails } = req.body;
+
+//     if (!db) {
+//         console.error('Database connection (db) is not defined.');
+//         return res.status(500).json({ message: 'Database connection error.' });
+//     }
+
+//     // Step 1: Check user balance and deduct if sufficient
+//     const checkBalanceQuery = 'SELECT balance FROM users WHERE email = ?';
+//     db.query(checkBalanceQuery, [userEmail], (err, result) => {
+//         if (err) {
+//             console.error('Error fetching balance:', err);
+//             return res.status(500).json({ message: 'Error fetching balance.' });
+//         }
+
+//         const currentBalance = result[0].balance;
+
+//         if (amount > currentBalance) {
+//             return res.status(400).json({ message: 'Insufficient balance for this withdrawal.' });
+//         }
+
+//         // Step 2: Deduct amount from user balance
+//         const newBalance = currentBalance - amount;
+//         const updateBalanceQuery = 'UPDATE users SET balance = ? WHERE email = ?';
+
+//         db.query(updateBalanceQuery, [newBalance, userEmail], (err) => {
+//             if (err) {
+//                 console.error('Error updating balance:', err);
+//                 return res.status(500).json({ message: 'Error processing withdrawal.' });
+//             }
+
+//             // Step 3: Insert into pending_withdrawals
+//             let query = '';
+//             let queryParams = [];
+
+//             if (method === 'bank') {
+//                 const { bankName, accountName, accountNumber } = bankDetails;
+//                 query = 'INSERT INTO pending_withdrawals (email, amount, status, request_date, bank_name, account_name, account_number, method) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)';
+//                 queryParams = [userEmail, amount, 'pending', bankName, accountName, accountNumber, method];
+//             } else if (method === 'wallet') {
+//                 query = 'INSERT INTO pending_withdrawals (email, amount, status, request_date, wallet_address, method) VALUES (?, ?, ?, NOW(), ?, ?)';
+//                 queryParams = [userEmail, amount, 'pending', walletAddress, method];
+//             } else {
+//                 return res.status(400).json({ message: 'Invalid withdrawal method selected.' });
+//             }
+
+//             db.query(query, queryParams, (err, result) => {
+//                 if (err) {
+//                     console.error('Error inserting withdrawal request:', err);
+//                     return res.status(500).json({ message: 'Error processing withdrawal request.' });
+//                 }
+
+//                 // Step 4: Send email notification
+//                 const subject = 'Withdrawal Request Submitted';
+//                 const htmlContent = `
+//                     <h3>Withdrawal Request Submitted</h3>
+//                     <p>Dear User,</p>
+//                     <p>Your withdrawal request of ${amount} has been submitted successfully and is pending approval.</p>
+//                     <p>Method: ${method === 'bank' ? 'Bank Account' : 'Crypto Wallet'}</p>
+//                     ${method === 'bank' ? `<p>Bank Name: ${bankDetails.bankName}</p>` : `<p>Wallet Address: ${walletAddress}</p>`}
+//                     <p>Thank you for using our service!</p>
+//                 `;
+
+//                 sendEmail(userEmail, subject, htmlContent)
+//                     .then(() => {
+//                         res.json({ message: 'Withdrawal request submitted successfully and email sent.' });
+//                     })
+//                     .catch(error => {
+//                         console.error('Error sending email:', error);
+//                         res.json({ message: 'Withdrawal request submitted successfully, but email notification failed.' });
+//                     });
+//             });
+//         });
+//     });
+// });
 
 
 // Global error handlers for unhandled errors
@@ -650,33 +741,160 @@ app.get('/api/stocks', (req, res) => {
     stockRequest.end();
 });
 
+// Route to create a Flutterwave payment link
+router.post('/create-payment-link', async (req, res) => {
+    const { email, amount, planDetails, depositMethod } = req.body;
 
-
-
-app.post('/verify-payment', async (req, res) => {
-    const { reference, amount } = req.body;
-    const paystackSecretKey = 'sk_live_9531183b8354a342dbe10d01e3abee48e6d9f07e';  // replace with your live secret key
-  
     try {
-      const response = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
-        headers: {
-          Authorization: `Bearer ${paystackSecretKey}`
-        }
-      });
-  
-      const paymentData = response.data.data;
-  
-      if (paymentData && paymentData.status === 'success' && paymentData.amount / 100 === amount && paymentData.currency === 'USD') {
-        // Successful payment in USD
-        return res.json({ success: true, message: 'Payment verified successfully.' });
-      } else {
-        return res.json({ success: false, message: 'Payment verification failed.' });
-      }
+        // Flutterwave API request to create a payment link
+        const response = await axios.post(
+            'https://api.flutterwave.com/v3/payments',
+            {
+                tx_ref: `tx_${Date.now()}`, // Unique transaction reference
+                amount,
+                currency: 'USD', // Adjust this to your desired currency
+                redirect_url: 'https://yourwebsite.com/payment-callback', // Update with your callback URL
+                customer: {
+                    email,
+                },
+                meta: {
+                    email,
+                    plan_name: planDetails.plan_name,
+                    deposit_method: depositMethod,
+                },
+                customizations: {
+                    title: 'Deposit Payment',
+                    description: `Payment for ${planDetails.plan_name}`,
+                },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+                },
+            }
+        );
+
+        const paymentLink = response.data.data.link;
+        res.status(200).send({ paymentLink });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ success: false, message: 'Server error during payment verification.' });
+        console.error('Error creating Flutterwave payment link:', error.response?.data || error.message);
+        res.status(500).send('Error creating payment link');
     }
-  });
+});
+
+// Flutterwave webhook to handle payment confirmation
+router.post('/webhook', async (req, res) => {
+    const secretHash = process.env.FLUTTERWAVE_WEBHOOK_SECRET;
+
+    // Validate the webhook signature
+    const signature = req.headers['verif-hash'];
+    if (!signature || signature !== secretHash) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    const payload = req.body;
+
+    // Handle successful payment
+    if (payload.event === 'charge.completed' && payload.data.status === 'successful') {
+        const paymentData = payload.data;
+
+        // Extract necessary data
+        const email = paymentData.customer.email;
+        const amount = paymentData.amount;
+        const planName = paymentData.meta.plan_name;
+        const depositMethod = paymentData.meta.deposit_method;
+
+        // Plan details (adjust as needed)
+        const planDetails = {
+            plan_name: planName,
+            plan_principle_return: 1000, // Example value
+            plan_credit_amount: 1200, // Example value
+            plan_deposit_fee: 50, // Example value
+            plan_debit_amount: 1150, // Example value
+        };
+
+        const transactionDate = new Date();
+        const investmentStartDate = new Date(); // Modify as needed
+        const investmentEndDate = new Date();
+        investmentEndDate.setMonth(investmentEndDate.getMonth() + 1); // Example: 1-month duration
+
+        try {
+            // Insert into deposits table
+            await db.execute(
+                `INSERT INTO deposits (email, amount, date, status, investment_start_date, investment_end_date, 
+                plan_name, plan_principle_return, plan_credit_amount, plan_deposit_fee, plan_debit_amount, deposit_method) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    email,
+                    amount,
+                    transactionDate,
+                    'completed', // Status of the deposit
+                    investmentStartDate,
+                    investmentEndDate,
+                    planDetails.plan_name,
+                    planDetails.plan_principle_return,
+                    planDetails.plan_credit_amount,
+                    planDetails.plan_deposit_fee,
+                    planDetails.plan_debit_amount,
+                    depositMethod,
+                ]
+            );
+
+            // Insert into transactions table
+            await db.execute(
+                `INSERT INTO transactions (email, plan_name, plan_profit, plan_principle_return, plan_credit_amount, 
+                plan_deposit_fee, plan_debit_amount, deposit_method, transaction_dateand) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    email,
+                    planDetails.plan_name,
+                    planDetails.plan_credit_amount - planDetails.plan_principle_return, // Profit calculation
+                    planDetails.plan_principle_return,
+                    planDetails.plan_credit_amount,
+                    planDetails.plan_deposit_fee,
+                    planDetails.plan_debit_amount,
+                    depositMethod,
+                    transactionDate,
+                ]
+            );
+
+            res.status(200).send('Payment processed and recorded successfully.');
+        } catch (dbError) {
+            console.error('Database error:', dbError);
+            res.status(500).send('Failed to record payment.');
+        }
+    } else {
+        res.status(400).send('Unhandled event');
+    }
+});
+
+
+
+
+// app.post('/verify-payment', async (req, res) => {
+//     const { reference, amount } = req.body;
+//     const paystackSecretKey = 'sk_live_9531183b8354a342dbe10d01e3abee48e6d9f07e';  // replace with your live secret key
+  
+//     try {
+//       const response = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
+//         headers: {
+//           Authorization: `Bearer ${paystackSecretKey}`
+//         }
+//       });
+  
+//       const paymentData = response.data.data;
+  
+//       if (paymentData && paymentData.status === 'success' && paymentData.amount / 100 === amount && paymentData.currency === 'USD') {
+//         // Successful payment in USD
+//         return res.json({ success: true, message: 'Payment verified successfully.' });
+//       } else {
+//         return res.json({ success: false, message: 'Payment verification failed.' });
+//       }
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({ success: false, message: 'Server error during payment verification.' });
+//     }
+//   });
   
 
 
@@ -879,20 +1097,179 @@ app.post('/api/withdrawals/reject', async (req, res) => {
 
 
 
+app.get('/api/admin/user-details', async (req, res) => {
+    try {
+        const { email } = req.query;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email parameter is required' });
+        }
+
+        const [rows] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const user = rows[0]; 
+        res.json({
+            id: user.id,
+            full_name: user.full_name,
+            email: user.email,
+            username: user.username,
+            bitcoin_address: user.bitcoin_address,
+            referral_code: user.referral_code,
+            created_at: user.created_at,
+            balance: user.balance,
+            total_withdrawals: user.total_withdrawals,
+            total_deposits: user.total_deposits
+        });
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+app.post('/api/admin/add-funds', async (req, res) => {
+    const { email, amount, description, actionType, authPassword, planId } = req.body;
+
+    if (!email || !amount || !description || !actionType || !authPassword) {
+        return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    try {
+        // Validate the admin password
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        if (authPassword !== adminPassword) {
+            return res.status(403).json({ message: 'Invalid admin password' });
+        }
+
+        // Fetch user details using email
+        const [rows] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const user = rows[0];
+
+        // Process the action (bonus or investment)
+        if (actionType === 'bonus') {
+            // Add bonus to user balance
+            await db.execute('UPDATE users SET balance = balance + ? WHERE email = ?', [amount, email]);
+            
+            // Insert transaction log for the bonus
+            await db.execute(
+                'INSERT INTO transactions (email, plan_name, plan_credit_amount, deposit_method, transaction_date) VALUES (?, ?, ?, ?, ?)',
+                [email, null, amount, 'Bonus', new Date()]
+            );
+
+            res.json({ message: `Added ${amount} as bonus to ${user.full_name}` });
+
+        } else if (actionType === 'investment') {
+            if (!planId) {
+                return res.status(400).json({ message: 'Plan ID is required for investment' });
+            }
+
+            // Fetch investment plan details
+            let planDetails;
+            try {
+                planDetails = getPlanDetails(planId);
+            } catch (planError) {
+                console.error(planError);
+                return res.status(404).json({ message: 'Investment plan not found' });
+            }
+
+            const { name: plan_name, duration } = planDetails; // duration is in hours
+
+            // Calculate start_date and end_date
+            const startDate = new Date(); // Current server time
+            const endDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000); // Add duration in hours
+
+            // Insert investment record into active_deposits
+            await db.execute(
+                `INSERT INTO active_deposits (email, plan_name, amount, investment_start_date, investment_end_date) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [email, plan_name, amount, startDate, endDate]
+            );
+
+            // Insert transaction log for the investment
+            await db.execute(
+                `INSERT INTO transactions (email, plan_name, plan_credit_amount, deposit_method, transaction_date) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [email, plan_name, amount, 'Investment', startDate]
+            );
+
+            res.json({ message: `Added ${amount} as investment to ${user.full_name}` });
+
+        } else {
+            res.status(400).json({ message: 'Invalid action type' });
+        }
+
+    } catch (error) {
+        console.error('Error adding funds:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Helper function to get investment plan details
+function getPlanDetails(planId) {
+    const plans = {
+        1: { name: '10-RIO-AFTER-24-HOURS', duration: 24 },
+        2: { name: '20-RIO-AFTER-72-HOURS', duration: 72 },
+        3: { name: '50% RIO AFTER 1 WEEK', duration: 168 },
+        4: { name: '100-RIO-AFTER-30-DAYS', duration: 720 }
+    };
+    return plans[planId] || { name: 'Unknown Plan', duration: 0 };
+}
 
 
 
 
-// // Route to get the total number of users
-// app.get('/api/admin/total-users', (req, res) => {
-//     pool.query('SELECT COUNT(*) AS total_users FROM users', (error, results) => {
-//         if (error) {
-//             console.error('Error fetching total users:', error);
-//             return res.status(500).json({ message: 'Error fetching total users.' });
-//         }
-//         res.json(results[0]);
-//     });
-//   });
+app.post('/api/admin/add-penalty', async (req, res) => {
+    const { email, penaltyAmount, penaltyType, description, authPassword } = req.body;
+
+    if (!email || !penaltyAmount || !penaltyType || !description || !authPassword) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    try {
+        // Validate the admin password
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        if (authPassword !== adminPassword) {
+            return res.status(403).json({ success: false, message: 'Invalid admin password' });
+        }
+
+        // Fetch user details using email
+        const [rows] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        const user = rows[0];
+        const newBalance = user.balance - parseFloat(penaltyAmount);
+
+        // Update user's balance
+        await db.execute('UPDATE users SET balance = ? WHERE email = ?', [newBalance, email]);
+
+        // // Insert penalty log
+        // await db.execute(
+        //     'INSERT INTO penalties (email, amount, type, description, date) VALUES (?, ?, ?, ?, ?)',
+        //     [email, penaltyAmount, penaltyType, description, new Date()]
+        // );
+
+        res.json({ success: true, message: `Penalty of ${penaltyAmount} added to ${user.full_name}` });
+
+    } catch (error) {
+        console.error('Error adding penalty:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
+
+
+
+
+
   
 
 // Route to get all users' details

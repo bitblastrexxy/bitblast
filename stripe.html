@@ -2,18 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="manifest" href="/manifest.json">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="  #1f1f1f">
-    <meta name="apple-mobile-web-app-status-bar-style" content="  #1f1f1f">
+    <meta name="theme-color" content="#1f1f1f">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="stylesheet" href="./css/stripe.css">
     <title>Payment - Moniegram</title>
+    <link rel="stylesheet" href="./css/stripe.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Jacquarda+Bastarda+9&family=Poppins:ital,wght@0,400;1,300;1,400&display=swap" rel="stylesheet">
-    <script src="https://js.paystack.co/v1/inline.js"></script>
-
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://checkout.flutterwave.com/v3.js"></script>
 </head>
 <body>
     <div class="container">
@@ -21,46 +18,63 @@
         <form id="paymentForm">
           <label for="amount">Enter Amount to Deposit:</label>
           <input type="number" id="amount" required />
-          <button type="button" onclick="payWithPaystack()">Deposit Now</button>
+          <button type="button" onclick="payWithFlutterwave()">Deposit Now</button>
         </form>
     </div>
 
     <script>
-    function payWithPaystack() {
-  const amountInput = document.getElementById('amount').value;
-  const amountInCents = amountInput * 100; // Convert amount to cents for USD
-
-  const handler = PaystackPop.setup({
-    key: 'pk_live_b196a66efbb5093895553c63b0cc0b63991d21ed',  // replace with your public key
-    email: 'monigram.online@payment.com',    // replace with dynamic user email if needed
-    amount: amountInCents,
-    currency: 'NGN',              // Specify USD for the currency
-    callback: function(response) {
-      // Proceed to backend verification
-      fetch('/verify-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ reference: response.reference, amount: amountInput })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          alert('Payment verified and successful!');
-        } else {
-          alert('Payment verification failed.');
-        }
-      });
-    },
-    onClose: function() {
-      alert('Transaction was not completed.');
-    }
-  });
-
-  handler.openIframe();
-}
-
-    </script>
+      function payWithFlutterwave() {
+          const amount = document.getElementById("amount").value;
+  
+          if (!amount || amount <= 0) {
+              alert("Please enter a valid amount.");
+              return;
+          }
+  
+          FlutterwaveCheckout({
+              public_key: "FLWPUBK-56a6b33bed59da30f8dd0b6f8762a3a9-X", // Update this if necessary
+              tx_ref: "MG-" + Date.now(), // Unique reference
+              amount: amount,
+              currency: "NGN", // Update currency if needed
+              payment_options: "card, mobilemoney, ussd",
+              customer: {
+                  email: "monigram.online@payment.com", // Use dynamic email if available
+                  name: "Moniegram User" // Optional: Replace with the user’s name
+              },
+              customizations: {
+                  title: "Moniegram Deposit",
+                  description: "Payment for wallet funding",
+                  logo: "https://your-website.com/logo.png" // Replace with your logo URL
+              },
+              callback: function(response) {
+                  // Payment was successful
+                  fetch("/verify-payment", {
+                      method: "POST",
+                      headers: {
+                          "Content-Type": "application/json"
+                      },
+                      body: JSON.stringify({ transaction_id: response.transaction_id })
+                  })
+                      .then(res => res.json())
+                      .then(data => {
+                          if (data.success) {
+                              alert("Payment successful and verified!");
+                          } else {
+                              alert("Payment verification failed. Please contact support.");
+                          }
+                      })
+                      .catch(err => {
+                          console.error("Verification Error:", err);
+                          alert("An error occurred while verifying the payment.");
+                      });
+              },
+              onclose: function() {
+                  alert("Payment window closed.");
+              },
+              callback_timeout: 10 // Timeout for the callback
+          });
+      }
+  </script>
+  
 </body>
 </html>
