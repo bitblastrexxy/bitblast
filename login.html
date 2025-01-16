@@ -118,10 +118,19 @@
                         <button type="submit" id="signupButton">Sign Up</button>
                         <div class="spinner" id="signupLoadingSpinner"></div>
                         <p>If you already have an account, <span class="login-link" id="loginLink">Log in</span></p>
-                    </form>
+                    </form><br>
+                    
                 </div>
             </div>
         </div>
+        <button onclick="alert('Please install our app by manually adding it to home screen on your broswer menu as your browser version is incompartible with app resources. For further assisatnce please login and contact support. Thank you.')" id="installButton" style=" width: 100%; position: fixed; bottom: 20px; right: 0.1%; background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));
+        padding: 9px 25px;
+        font-weight: bold;
+        font-size: 12px;
+        border-style: none;
+        color: black;">
+            Install Our App
+        </button>
     </div>
 
     <script>
@@ -234,7 +243,48 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
 
         signupLink.addEventListener('click', function() {
             formWrapper.style.transform = 'translateX(-50%)';
-        });
+});
+
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  console.log('beforeinstallprompt event fired');
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installButton').style.display = 'block';
+});
+
+// Add a click event listener to the install button
+document.getElementById('installButton').addEventListener('click', async () => {
+    console.log('Install button clicked');
+    if (deferredPrompt) {
+        deferredPrompt.prompt(); // Show the install prompt
+        const choiceResult = await deferredPrompt.userChoice;
+        console.log(`User response: ${choiceResult.outcome}`);
+        if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+        } else {
+            console.log('User dismissed the install prompt');
+        }
+        deferredPrompt = null; // Clear the deferred prompt
+    } else {
+        console.warn('No deferred prompt available');
+    }
+});
+
+// Check if the app is already installed
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('Page loaded. Checking for install eligibility...');
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('App is already installed');
+        const installButton = document.getElementById('installButton');
+        if (installButton) {
+            installButton.style.display = 'none'; // Hide the button if installed
+        }
+    } else {
+        console.log('App is not installed (checked on load). Showing install button.');
+    }
+});
     </script>
 </body>
 </html>
