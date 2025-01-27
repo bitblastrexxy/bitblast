@@ -98,19 +98,21 @@ app.post('/api/signup', async (req, res) => {
 async function sendEmail(to, subject, htmlContent) {
     try {
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.zoho.com', // Zoho SMTP server
+            port: 465, // SSL port
+            secure: true, // Use SSL
             auth: {
-                user: process.env.EMAIL_USER, 
-                pass: process.env.EMAIL_PASS 
+                user: process.env.ZOHO_EMAIL_USER, // Your Zoho email
+                pass: process.env.ZOHO_EMAIL_PASS  // Your Zoho email password or app-specific password
             }
         });
 
         // Set up email options
         const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: to,
-            subject: subject, 
-            html: htmlContent
+            from: process.env.ZOHO_EMAIL_USER, // Sender address
+            to: to, // Recipient address
+            subject: subject, // Subject line
+            html: htmlContent // HTML body
         };
 
         // Send the email
@@ -120,7 +122,6 @@ async function sendEmail(to, subject, htmlContent) {
         console.error('Error sending email:', error);
     }
 }
-
 
 
 
@@ -341,7 +342,7 @@ app.post('/api/deposit', async (req, res) => {
             '10% RIO AFTER 24 HOURS': 24 * 60 * 60 * 1000, // 24 hours in milliseconds
             '20% RIO AFTER 72 HOURS': 72 * 60 * 60 * 1000, // 72 hours in milliseconds
             '50% RIO LONG TERM': 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-            '100% RIO AFTER 30 DAYS': 30 * 24 * 60 * 60 * 1000 // 30 days in milliseconds
+            '100% RIO AFTER 14 DAYS': 14 * 24 * 60 * 60 * 1000 // 14 days in milliseconds
         };
 
         const investmentStartDate = new Date();
@@ -598,7 +599,35 @@ app.post('/api/withdraw', async (req, res) => {
 
         // Send a notification email to the user
         const emailSubject = "Withdrawal Request Received";
-        const emailBody = `<p>Your withdrawal request of ${amount} has been received and is pending approval.</p>`;
+        const emailBody = `
+         <div style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4;">
+                <table width="100%" style="max-width: 600px; margin: auto; border-collapse: collapse;">
+                    <tr>
+                        <td style="text-align: center; padding: 20px;">
+                            <img src="https://github.com/bitblastrexxy/bitblast/blob/main/images/moniegram%20logo.png?raw=true" alt="Company Logo" style="max-width: 30%; height: auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #ffa62a; padding: 20px; text-align: center; color: white;">
+                            <h1 style="margin: 0;">Deposit Successful!</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: white; padding: 20px;">
+                           <p>Your withdrawal request of ${amount} has been received and is pending approval.</p>
+                            <p style="font-size: 16px; line-height: 1.5;">Thank you for investing with us!</p>
+                            <a href="https://biggyinvestments.onrender.com/signin.html" style="display: inline-block; background-color: #ffa62a; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Return to Dashboard</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f4f4f4; padding: 10px; text-align: center;">
+                            <p style="font-size: 12px; color: #ffa62a;">&copy; 2024 BiggyassetsLTD. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        
+        `;
         await sendEmail(userEmail, emailSubject, emailBody);
         console.log("Notification email sent to user:", userEmail);
 
@@ -1134,6 +1163,7 @@ app.post('/api/withdrawals/approve', async (req, res) => {
     }
 });
 
+
 // Reject Withdrawal and Refund User
 app.post('/api/withdrawals/reject', async (req, res) => {
     const { id } = req.body;
@@ -1252,7 +1282,7 @@ app.post('/api/admin/add-funds', async (req, res) => {
                 [email, null, amount, 'Bonus', new Date()]
             );
 
-            res.json({ message: `Added ${amount} as bonus to ${user.full_name}` });
+            res.json({ message: `Added ${amount} as bonus to ${user.email}` });
 
         } else if (actionType === 'investment') {
             if (!planId) {
@@ -1306,7 +1336,7 @@ function getPlanDetails(planId) {
         1: { name: '10-RIO-AFTER-24-HOURS', duration: 24 },
         2: { name: '20-RIO-AFTER-72-HOURS', duration: 72 },
         3: { name: '50% RIO AFTER 1 WEEK', duration: 168 },
-        4: { name: '100-RIO-AFTER-30-DAYS', duration: 720 }
+        4: { name: '100-RIO-AFTER-14-DAYS', duration: 336 }
     };
     return plans[planId] || { name: 'Unknown Plan', duration: 0 };
 }
