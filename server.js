@@ -388,7 +388,7 @@ app.post('/api/deposit', async (req, res) => {
                     </tr>
                     <tr>
                         <td style="background-color: #f4f4f4; padding: 10px; text-align: center;">
-                            <p style="font-size: 12px; color: #ffa62a;">&copy; 2024 BiggyassetsLTD. All rights reserved.</p>
+                            <p style="font-size: 12px; color: #ffa62a;">&copy; 2024 Moniegram. All rights reserved.</p>
                         </td>
                     </tr>
                 </table>
@@ -621,7 +621,7 @@ app.post('/api/withdraw', async (req, res) => {
                     </tr>
                     <tr>
                         <td style="background-color: #f4f4f4; padding: 10px; text-align: center;">
-                            <p style="font-size: 12px; color: #ffa62a;">&copy; 2024 BiggyassetsLTD. All rights reserved.</p>
+                            <p style="font-size: 12px; color: #ffa62a;">&copy; 2024 Moniegram. All rights reserved.</p>
                         </td>
                     </tr>
                 </table>
@@ -638,86 +638,6 @@ app.post('/api/withdraw', async (req, res) => {
     }
 });
 
-
-
-
-// // Updated withdraw route with balance deduction and email notification
-// app.post('/api/withdraw', (req, res) => {
-//     const { userEmail, amount, method, walletAddress, bankDetails } = req.body;
-
-//     if (!db) {
-//         console.error('Database connection (db) is not defined.');
-//         return res.status(500).json({ message: 'Database connection error.' });
-//     }
-
-//     // Step 1: Check user balance and deduct if sufficient
-//     const checkBalanceQuery = 'SELECT balance FROM users WHERE email = ?';
-//     db.query(checkBalanceQuery, [userEmail], (err, result) => {
-//         if (err) {
-//             console.error('Error fetching balance:', err);
-//             return res.status(500).json({ message: 'Error fetching balance.' });
-//         }
-
-//         const currentBalance = result[0].balance;
-
-//         if (amount > currentBalance) {
-//             return res.status(400).json({ message: 'Insufficient balance for this withdrawal.' });
-//         }
-
-//         // Step 2: Deduct amount from user balance
-//         const newBalance = currentBalance - amount;
-//         const updateBalanceQuery = 'UPDATE users SET balance = ? WHERE email = ?';
-
-//         db.query(updateBalanceQuery, [newBalance, userEmail], (err) => {
-//             if (err) {
-//                 console.error('Error updating balance:', err);
-//                 return res.status(500).json({ message: 'Error processing withdrawal.' });
-//             }
-
-//             // Step 3: Insert into pending_withdrawals
-//             let query = '';
-//             let queryParams = [];
-
-//             if (method === 'bank') {
-//                 const { bankName, accountName, accountNumber } = bankDetails;
-//                 query = 'INSERT INTO pending_withdrawals (email, amount, status, request_date, bank_name, account_name, account_number, method) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)';
-//                 queryParams = [userEmail, amount, 'pending', bankName, accountName, accountNumber, method];
-//             } else if (method === 'wallet') {
-//                 query = 'INSERT INTO pending_withdrawals (email, amount, status, request_date, wallet_address, method) VALUES (?, ?, ?, NOW(), ?, ?)';
-//                 queryParams = [userEmail, amount, 'pending', walletAddress, method];
-//             } else {
-//                 return res.status(400).json({ message: 'Invalid withdrawal method selected.' });
-//             }
-
-//             db.query(query, queryParams, (err, result) => {
-//                 if (err) {
-//                     console.error('Error inserting withdrawal request:', err);
-//                     return res.status(500).json({ message: 'Error processing withdrawal request.' });
-//                 }
-
-//                 // Step 4: Send email notification
-//                 const subject = 'Withdrawal Request Submitted';
-//                 const htmlContent = `
-//                     <h3>Withdrawal Request Submitted</h3>
-//                     <p>Dear User,</p>
-//                     <p>Your withdrawal request of ${amount} has been submitted successfully and is pending approval.</p>
-//                     <p>Method: ${method === 'bank' ? 'Bank Account' : 'Crypto Wallet'}</p>
-//                     ${method === 'bank' ? `<p>Bank Name: ${bankDetails.bankName}</p>` : `<p>Wallet Address: ${walletAddress}</p>`}
-//                     <p>Thank you for using our service!</p>
-//                 `;
-
-//                 sendEmail(userEmail, subject, htmlContent)
-//                     .then(() => {
-//                         res.json({ message: 'Withdrawal request submitted successfully and email sent.' });
-//                     })
-//                     .catch(error => {
-//                         console.error('Error sending email:', error);
-//                         res.json({ message: 'Withdrawal request submitted successfully, but email notification failed.' });
-//                     });
-//             });
-//         });
-//     });
-// });
 
 
 // Global error handlers for unhandled errors
