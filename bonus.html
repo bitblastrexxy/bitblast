@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Bonus</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="./css/admindash.css">
+</head>
+<body>
+
+    <div class="menu">
+        <center> <table width="1280" border="0" cellpadding="0" cellspacing="0" > <tr> <td valign=top> <table cellspacing=0 cellpadding=0 border=0 width=100%> <tr> <td background="images/ver.gif" bgcolor=#FF8D00><img src="images/top.gif" border="0" align=left></td> <td background="images/ver.gif" bgcolor=#FF8D00 valign=bottom align=right> <span style="font-family: verdana; font-size: 12px; color: white"> <b> 
+            <div id="google_translate_element"></div> <a href="admindash.html" class=toplink>Home</a> &middot;  <a href="signin.html" class=toplink>Logout</a></b></span>&nbsp; &nbsp; </td> </tr> </table> </td> </tr> <tr> <td valign=top> <table cellspacing=0 cellpadding=1 border=0 width=100% bgcolor=#ff8d00> <tr> <td> <table width="100%" height="100%" border="0" cellpadding="0" cellspacing="0"> <tr bgcolor="#FFFFFF" valign="top">  <td width="500" align=center>  <ul class="nav" style="width:220px">   <li class="nav-item dropdown"> <div class="nav-link dropdown-toggle">Plans</div> <div class="dropdown-menu">  <a class="dropdown-item" href="?a=programs"><i class="fa fa-signal"></i> Investment Programs</a>  <a class="dropdown-item" href="?a=expiring_deposits"><i class="fa fa-hourglass-end"></i> Expiring Deposits</a>  </div> </li>    <li class="nav-item dropdown"> <div class="nav-link dropdown-toggle">Users </div> <div class="dropdown-menu">  <a onclick="window.location.href='users.html'" class="dropdown-item" ><i class="fa fa-user"></i> Users <span class="badge sticker badge-success"><span id="totalUsersCount">0</span></span></a>  <a class="dropdown-item" href="?a=ext_accounts_blacklist"><i class="fa fa-times-circle"></i> Accounts Blacklist</a>  <a class="dropdown-item" href="?a=top_referral_earnings"><i class="fa fa-trophy"></i> Top Referral Earnings</a>  </div> </li>    <li class="nav-item dropdown"> <div class="nav-link dropdown-toggle">Transactions</div> <div class="dropdown-menu">  <a class="dropdown-item" href="?a=transactions"><i class="fa fa-book"></i> Transactions</a>  <a class="dropdown-item" onclick="viewPendingWithdrawals()"><i class="fa fa-hand-paper-o"></i> Withdrawal Requests</a>  <a class="dropdown-item" href="?a=transactions&ttype=add_funds"><i class="fa fa-list"></i> Add Funds</a>  <a class="dropdown-item" href="?a=transactions&ttype=deposit"><i class="fa fa-list"></i> Deposits</a>  <a class="dropdown-item" href="?a=transactions&ttype=withdrawal"><i class="fa fa-list"></i> Withdrawals</a>  <a class="dropdown-item" href="?a=transactions&ttype=earning"><i class="fa fa-list"></i> Earnings</a>  <a class="dropdown-item" href="?a=transactions&ttype=commissions"><i class="fa fa-list"></i> Referral</a>  <a class="dropdown-item" href="?a=transactions&ttype=exchange"><i class="fa fa-list"></i> Exchange</a>  <a class="dropdown-item" href="/pending-deposit"><i class="fa fa-compress"></i> Pending Deposits <span class="badge sticker badge-success"></span></a>  <a class="dropdown-item" href="?a=add_transactions"><i class="fa fa-plus-circle"></i> Add Bonus</a>  </div> </li>    <li class="nav-item dropdown"> <div class="nav-link dropdown-toggle">Settings</div>  </li>    <li class="nav-item"> <a class="nav-link" href="?a=logout">Logout</a> </li> </ul>  </td> <td bgcolor="#ff8d00" valign="top" width=1><img src=images/q.gif width=1 height=1></td>  <td bgcolor="#FFFFFF" valign="top" width=99%>
+    </div>
+    <h2>Add Bonus or Investment for User</h2>
+
+    <form id="bonusOrInvestmentForm">
+        <p><strong>User:</strong> <span id="userName"></span></p>
+
+        <label for="currency">Currency:</label>
+        <input type="text" id="currency" name="currency" value="Bitcoin" readonly><br>
+
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" name="amount" required><br>
+
+        <label for="actionType">Select Action:</label>
+        <select id="actionType" name="actionType" required>
+            <option value="">Select Action</option>
+            <option value="bonus">Add as Bonus</option>
+            <option value="investment">Add as Investment</option>
+        </select><br>
+
+        <div id="investmentOptions" style="display: none;">
+            <label for="planId">Select Investment Plan:</label>
+            <select id="planId" name="planId">
+                <option value="1">10-RIO-AFTER-24-HOURS</option>
+                <option value="2">20-RIO-AFTER-72-HOURS</option>
+                <option value="3">50% RIO AFTER 1 WEEK</option>
+                <option value="4">100-RIO-AFTER-30-DAYS</option>
+            </select><br>
+        </div><br>
+
+        <label for="description">Reason:</label>
+        <input id="description" name="description" required><br>
+
+        <label for="authPassword">Enter Admin Password:</label>
+        <input type="password" id="authPassword" name="authPassword" required><br>
+
+        <button type="submit">Submit</button>
+    </form>
+    <script>
+               document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('email');
+
+            if (email) {
+                fetch(`/api/admin/user-details?email=${encodeURIComponent(email)}`)
+                    .then(response => response.json())
+                    .then(user => {
+                        document.getElementById('userName').textContent = user.full_name;
+                    })
+                    .catch(error => console.error('Error fetching user details:', error));
+            } else {
+                console.error('Email not provided in the URL');
+            }
+
+            document.getElementById('actionType').addEventListener('change', function() {
+                const actionType = this.value;
+                const investmentOptions = document.getElementById('investmentOptions');
+                if (actionType === 'investment') {
+                    investmentOptions.style.display = 'block';
+                } else {
+                    investmentOptions.style.display = 'none';
+                }
+            });
+
+            // Handle form submission
+            document.getElementById('bonusOrInvestmentForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const actionType = document.getElementById('actionType').value;
+                const amount = document.getElementById('amount').value;
+                const description = document.getElementById('description').value;
+                const authPassword = document.getElementById('authPassword').value;
+                const planId = document.getElementById('planId').value;
+                const email = new URLSearchParams(window.location.search).get('email'); // Extract email from URL
+
+                if (!actionType || !amount || !description || !authPassword) {
+                    alert('Please fill all required fields');
+                    return;
+                }
+
+                // Prepare the payload based on the selected action type
+                const payload = {
+                    email: email,
+                    amount: amount,
+                    description: description,
+                    authPassword: authPassword,
+                    actionType: actionType,
+                    planId: actionType === 'investment' ? planId : null, // Only send planId if investment
+                };
+
+                // Send the data to the backend
+                fetch('/api/admin/add-funds', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert('Success: ' + data.message);
+                    window.location.href = '/users.html'; // Redirect to users page after success
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('There was an error processing the request');
+                });
+            });
+        });
+           </script>
+</body>
+</html>
