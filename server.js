@@ -1087,6 +1087,16 @@ app.post('/api/withdrawals/approve', async (req, res) => {
     const { id } = req.body;
 
     try {
+        // Fetch withdrawal details
+        const [withdrawal] = await db.query('SELECT email, amount FROM pending_withdrawals WHERE id = ?', [id]);
+
+        if (withdrawal.length === 0) {
+            return res.status(404).json({ message: 'Withdrawal not found' });
+        }
+
+        const { email, amount } = withdrawal[0];
+
+        // Update withdrawal status
         const [result] = await db.query(
             'UPDATE pending_withdrawals SET status = ?, approved_date = NOW() WHERE id = ?',
             ['Approved', id]
@@ -1096,12 +1106,45 @@ app.post('/api/withdrawals/approve', async (req, res) => {
             return res.status(404).json({ message: 'Withdrawal not found' });
         }
 
-        res.status(200).json({ message: 'Withdrawal approved successfully' });
+        // Send approval email
+        const emailContent = `
+            <div style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4;">
+                <table width="100%" style="max-width: 600px; margin: auto; border-collapse: collapse;">
+                    <tr>
+                        <td style="text-align: center; padding: 20px;">
+                            <img src="https://github.com/bitblastrexxy/bitblast/blob/main/images/moniegram%20logo.png?raw=true" alt="Company Logo" style="max-width: 30%; height: auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #ffa62a; padding: 20px; text-align: center; color: white;">
+                            <h1 style="margin: 0;">Withdrawal Approved!</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: white; padding: 20px;">
+                            <p style="font-size: 16px; line-height: 1.5;">Dear ${email},</p>
+                            <p style="font-size: 16px; line-height: 1.5;">Your withdrawal request of $${amount} has been successfully approved. The funds will be transferred shortly.</p>
+                            <p style="font-size: 16px; line-height: 1.5;">Thank you for choosing Moniegram!</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f4f4f4; padding: 10px; text-align: center;">
+                            <p style="font-size: 12px; color: #ffa62a;">&copy; 2024 Moniegram. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        `;
+
+        await sendEmail(email, 'Withdrawal Approved', emailContent);
+
+        res.status(200).json({ message: 'Withdrawal approved successfully and email sent' });
     } catch (error) {
         console.error('Error approving withdrawal:', error);
         res.status(500).json({ message: 'Error approving withdrawal' });
     }
 });
+
 
 
 // Reject Withdrawal and Refund User
@@ -1143,7 +1186,40 @@ app.post('/api/withdrawals/reject', async (req, res) => {
 
         // Commit the transaction
         await db.query('COMMIT');
-        res.status(200).json({ message: 'Withdrawal rejected and refunded successfully' });
+
+        // Send rejection email
+        const emailContent = `
+            <div style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4;">
+                <table width="100%" style="max-width: 600px; margin: auto; border-collapse: collapse;">
+                    <tr>
+                        <td style="text-align: center; padding: 20px;">
+                            <img src="https://github.com/bitblastrexxy/bitblast/blob/main/images/moniegram%20logo.png?raw=true" alt="Company Logo" style="max-width: 30%; height: auto;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #FF5733; padding: 20px; text-align: center; color: white;">
+                            <h1 style="margin: 0;">Withdrawal Rejected!</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: white; padding: 20px;">
+                            <p style="font-size: 16px; line-height: 1.5;">Dear ${email},</p>
+                            <p style="font-size: 16px; line-height: 1.5;">Your withdrawal request of $${amount} has been rejected. The amount has been refunded to your account balance.</p>
+                            <p style="font-size: 16px; line-height: 1.5;">If you have any questions, feel free to contact support.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f4f4f4; padding: 10px; text-align: center;">
+                            <p style="font-size: 12px; color: #FF5733;">&copy; 2024 Moniegram. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        `;
+
+        await sendEmail(email, 'Withdrawal Rejected', emailContent);
+
+        res.status(200).json({ message: 'Withdrawal rejected, amount refunded, and email sent' });
     } catch (error) {
         // Rollback transaction on error
         await db.query('ROLLBACK');
@@ -1151,6 +1227,7 @@ app.post('/api/withdrawals/reject', async (req, res) => {
         res.status(500).json({ message: 'Error rejecting withdrawal and refunding amount' });
     }
 });
+
 
 
 
