@@ -8,10 +8,9 @@ const bcrypt = require('bcrypt'); // For password hashing
 const router = express.Router();
 const cors = require('cors');
 const path = require('path');
+const cron = require('node-cron');
 
-dotenv.config(); // Load environment variables
-
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+dotenv.config();
 
 const app = express();
 app.use(cors()); // Enable CORS
@@ -407,7 +406,91 @@ app.post('/api/deposit', async (req, res) => {
 
 
 
+// Cron job to check for completed investments and update balances
+const checkInvestmentEnd = async () => {
+    try {
+        const now = new Date();
 
+        // Retrieve active deposits where the investment end date has passed
+        const [activeDeposits] = await db.query(
+            `SELECT id, email, amount, profit, plan_name, investment_start_date, investment_end_date 
+             FROM active_deposits 
+             WHERE investment_end_date <= ?`,
+            [now]
+        );
+
+        for (const deposit of activeDeposits) {
+            const { amount, profit, email, plan_name, investment_start_date, investment_end_date, id } = deposit;
+
+            // Calculate the interest based on the profit percentage
+            const interestAmount = amount * (profit / 100);
+            console.log(`Interest calculated for deposit ${id}: ${interestAmount}`);
+
+            // Get the user's current balance from the database using their email
+            const [userBalance] = await db.query(
+                `SELECT balance FROM users WHERE email = ?`,
+                [email]
+            );
+
+            // Check if userBalance is empty
+            if (userBalance.length === 0) {
+                console.error(`User with email ${email} not found.`);
+                continue; // Skip this deposit and continue with the next one
+            }
+
+            // Convert amount to a number (if it's a string) to ensure correct mathematical operations
+            const amountAsNumber = parseFloat(amount); // Convert string to number if needed
+            const oldBalance = parseFloat(userBalance[0].balance); // Ensure old balance is a number
+
+            // Calculate the new balance (capital + interest)
+            const newBalance = oldBalance + amountAsNumber + interestAmount;
+
+            // Round the balance to two decimal places
+            const roundedNewBalance = Math.round(newBalance * 100) / 100;
+            const formattedNewBalance = roundedNewBalance.toFixed(2); // Ensure two decimal places
+
+            console.log(`Calculated New Balance (unrounded): ${newBalance}`);
+            console.log(`Rounded New Balance: ${roundedNewBalance}`);
+            console.log(`Formatted New Balance: ${formattedNewBalance}`);
+
+            // Log before updating the database
+            console.log(`Updating balance for user ${email}: Old Balance = ${oldBalance}, New Balance = ${formattedNewBalance}`);
+
+            // Update the user's balance with the new amount (capital + interest)
+            await db.query(
+                `UPDATE users 
+                 SET balance = ? 
+                 WHERE email = ?`,
+                [formattedNewBalance, email]
+            );
+
+            // Move record to completed_deposits table
+            await db.query(
+                `INSERT INTO completed_deposits (email, amount, interest, plan_name, investment_start_date, investment_end_date, date_completed)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [email, amountAsNumber, interestAmount, plan_name, investment_start_date, investment_end_date, now]
+            );
+
+            // Remove deposit from active_deposits
+            await db.query(
+                `DELETE FROM active_deposits 
+                 WHERE id = ?`,
+                [id]
+            );
+            console.log(`Deposit ${id} moved to completed_deposits and removed from active_deposits.`);
+        }
+
+        console.log('Investment end check completed, including interest addition.');
+    } catch (err) {
+        console.error('Error checking investments:', err);
+    }
+};
+
+// Schedule the cron job to run every 2 minutes
+cron.schedule('*/2 * * * *', () => {
+    console.log('Running scheduled task to check completed investments.');
+    checkInvestmentEnd();
+});
 
 
 // Route to fetch bitcoin_address and balance on page load
@@ -632,9 +715,14 @@ app.post('/api/assets', async (req, res) => {
         
         // Fetch transactions for the user
         const [transactions] = await db.query('SELECT * FROM transactions WHERE email = ?', [email]);
+        console.log('Deposits:', deposits);
 
         // Calculate total amount of active deposits
-        const totalAmount = deposits.length > 0 ? deposits.reduce((acc, deposit) => acc + deposit.amount, 0) : 0;
+        const totalAmount = deposits.length > 0
+        ? deposits.reduce((acc, deposit) => acc + parseFloat(deposit.amount), 0)
+        : 0;
+        console.log('Calculated Total Amount (Fixed):', totalAmount);
+
 
         // Ensure totalAmount is a number
         res.json({ totalAmount: Number(totalAmount), deposits, transactions }); // Send the data as JSON response

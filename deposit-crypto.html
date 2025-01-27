@@ -28,7 +28,7 @@
                 <option value="bitcoin">Bitcoin (BTC)</option>
                 <option value="ethereum">Ethereum (ETH)</option>
                 <option value="usdt">Tether (USDT)</option>
-                <option value="bnb">Binance Coin (BNB)</option>
+                <option value="litcoin">Litcoin</option>
             </select>
         </div>
 
@@ -36,7 +36,7 @@
         <!-- Wallet Address Display -->
         <div class="wallet-address-section">
             <h3>Your Wallet Address ></h3>
-            <p id="walletAddress">bc1qexampleaddressxyz12345</p> <!-- Placeholder address -->
+            <p id="walletAddress">bc1ql6ctq7ax5vsuxfqwlwg9yx0wss3jesq3npracd</p> <!-- Placeholder address -->
             <button id="copyWalletAddress" style="padding: 5px 10px; background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));">Copy Address</button>
         </div>
 
@@ -78,7 +78,7 @@
                 <li>Your deposit will be credited once confirmed by the network.</li>
             </ul>
         </div>
-    </div>
+    </div><br><br><br><br><br>
 
     <nav class="bottom-nav">
         <ul class="nav-links">
@@ -113,20 +113,20 @@
 
         switch (selectedCrypto) {
             case 'bitcoin':
-                newWalletAddress = 'bc1qexampleaddressxyz12345';
-                qrCodePath = './images/qr code for btc.png';
+                newWalletAddress = 'bc1ql6ctq7ax5vsuxfqwlwg9yx0wss3jesq3npracd';
+                qrCodePath = './images/btc qrcode.jpg';
                 break;
             case 'ethereum':
-                newWalletAddress = '0xexampleethereumaddress12345';
-                qrCodePath = './images/qr code for btc.png';
+                newWalletAddress = '0x4c172788B78BB1B42845db1bBf45B275Be29d35f';
+                qrCodePath = './images/etherium qrcode.jpg';
                 break;
             case 'usdt':
-                newWalletAddress = 'tetherexampleaddress12345';
-                qrCodePath = './images/qr code for btc.png';
+                newWalletAddress = 'TJMfmpyNV4Gk6gPfhxf1TMyrXQYYepFReT';
+                qrCodePath = './images/tether.jpg';
                 break;
-            case 'bnb':
-                newWalletAddress = 'bnbexampleaddress12345';
-                qrCodePath = './images/qr code for btc.png';
+            case 'litcoin':
+                newWalletAddress = 'LZAeh8BnqM8abFSNGDQiRvPoUEhGyBxrDN';
+                qrCodePath = './images/litcoin qrcode.jpg';
                 break;
         }
 
