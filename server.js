@@ -61,31 +61,51 @@ app.post('/api/signup', async (req, res) => {
         // Store the OTP in the database
         await db.query('UPDATE users SET otp = ? WHERE email = ?', [otp, email]);
 
-        // Send OTP email
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
+        // Send OTP email using Zoho transporter
+        const sendEmail = async (to, subject, htmlContent) => {
+            try {
+                const transporter = nodemailer.createTransport({
+                    host: 'smtp.zoho.com', // Zoho SMTP server
+                    port: 465, // SSL port
+                    secure: true, // Use SSL
+                    auth: {
+                        user: process.env.ZOHO_EMAIL_USER, // Your Zoho email
+                        pass: process.env.ZOHO_EMAIL_PASS  // Your Zoho email password or app-specific password
+                    }
+                });
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Your OTP Code for Moniegram',
-            text: `Hello, ${fullName}. Here is your OTP code: ${otp}. It will expire in 10 minutes. Your verification token is: ${token}`
+                // Set up email options
+                const mailOptions = {
+                    from: process.env.ZOHO_EMAIL_USER, // Sender address
+                    to: to, // Recipient address
+                    subject: subject, // Subject line
+                    html: htmlContent // HTML body
+                };
+
+                // Send the email
+                await transporter.sendMail(mailOptions);
+                console.log('Email sent successfully');
+            } catch (error) {
+                console.error('Error sending email:', error);
+                throw error;
+            }
         };
 
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error('Error sending email:', error);
-                return res.status(500).json({ message: 'Failed to send OTP. Please try again.' });
-            } else {
-                console.log('Email sent: ' + info.response);
-                res.json({ message: 'Signup successful! Please check your email for the OTP.', token });
-            }
-        });
+        const emailSubject = 'Your OTP Code for Moniegram';
+        const emailContent = `
+            <p>Hello, ${fullName},</p>
+            <p>Here is your OTP code: <strong>${otp}</strong>.</p>
+            <p>It will expire in 10 minutes.</p>
+            <p>Your verification token is: <strong>${token}</strong></p>
+        `;
+
+        try {
+            await sendEmail(email, emailSubject, emailContent);
+            res.json({ message: 'Signup successful! Please check your email for the OTP.', token });
+        } catch (error) {
+            return res.status(500).json({ message: 'Failed to send OTP. Please try again.' });
+        }
+
     } catch (error) {
         console.error('Signup error:', error);
         res.status(500).json({ message: 'Signup failed. Please try again.' });
@@ -1392,44 +1412,48 @@ app.get('/api/admin/withdrawals', async (req, res) => {
 });
 
 
+
 // Handle the newsletter send request
 app.post('/api/admin/send-newsletter', async (req, res) => {
-    const { subject, content, targetGroups } = req.body;
+    const { subject, content, targetGroups, specificEmail } = req.body;
 
     try {
         const users = [];
         let query = '';
 
-        for (const group of targetGroups) {
-            if (group === 'allUsers') {
-                query = 'SELECT email FROM users'; // Fetch all users' emails
-            } else if (group === 'noInvestments') {
-                query = `SELECT email FROM users WHERE id NOT IN 
-                         (SELECT user_id FROM investments)`; // Users with no investments
-            } else if (group === 'zeroBalance') {
-                query = 'SELECT email FROM users WHERE balance = 0'; // Users with zero balance
-            } else if (group === 'activeInvestments') {
-                // Fetch users with active deposits from the active_deposits table
-                query = `
-        SELECT u.email 
-        FROM users u
-        JOIN active_deposits ad ON u.email = ad.email
-        WHERE ad.investment_end_date > NOW()`; // Active investments (from active_deposits table)
-            } else if (group.startsWith('specificPlan:')) {
-                const planName = group.split(':')[1];
-                query = `
-                    SELECT u.email 
-                    FROM users u
-                    JOIN active_deposits ad ON u.email = ad.email
-                    WHERE ad.plan_name = ?`;
-                const [result] = await db.query(query, [planName]);
-                users.push(...result.map(user => user.email));
-                continue;
-            }
-            
+        // If specificEmail is provided, prioritize that
+        if (specificEmail) {
+            users.push(specificEmail);
+        } else {
+            for (const group of targetGroups) {
+                if (group === 'allUsers') {
+                    query = 'SELECT email FROM users'; // Fetch all users' emails
+                } else if (group === 'noInvestments') {
+                    query = `SELECT email FROM users WHERE id NOT IN 
+                             (SELECT user_id FROM investments)`; // Users with no investments
+                } else if (group === 'zeroBalance') {
+                    query = 'SELECT email FROM users WHERE balance = 0'; // Users with zero balance
+                } else if (group === 'activeInvestments') {
+                    query = `
+            SELECT u.email 
+            FROM users u
+            JOIN active_deposits ad ON u.email = ad.email
+            WHERE ad.investment_end_date > NOW()`; // Active investments
+                } else if (group.startsWith('specificPlan:')) {
+                    const planName = group.split(':')[1];
+                    query = `
+                        SELECT u.email 
+                        FROM users u
+                        JOIN active_deposits ad ON u.email = ad.email
+                        WHERE ad.plan_name = ?`;
+                    const [result] = await db.query(query, [planName]);
+                    users.push(...result.map(user => user.email));
+                    continue;
+                }
 
-            const [result] = await db.query(query);
-            users.push(...result.map(user => user.email));
+                const [result] = await db.query(query);
+                users.push(...result.map(user => user.email));
+            }
         }
 
         // Remove duplicate emails
@@ -1446,6 +1470,63 @@ app.post('/api/admin/send-newsletter', async (req, res) => {
         res.status(500).json({ message: 'Failed to send the newsletter' });
     }
 });
+
+
+
+// Handle the newsletter send request
+// app.post('/api/admin/send-newsletter', async (req, res) => {
+//     const { subject, content, targetGroups } = req.body;
+
+//     try {
+//         const users = [];
+//         let query = '';
+
+//         for (const group of targetGroups) {
+//             if (group === 'allUsers') {
+//                 query = 'SELECT email FROM users'; // Fetch all users' emails
+//             } else if (group === 'noInvestments') {
+//                 query = `SELECT email FROM users WHERE id NOT IN 
+//                          (SELECT user_id FROM investments)`; // Users with no investments
+//             } else if (group === 'zeroBalance') {
+//                 query = 'SELECT email FROM users WHERE balance = 0'; // Users with zero balance
+//             } else if (group === 'activeInvestments') {
+//                 // Fetch users with active deposits from the active_deposits table
+//                 query = `
+//         SELECT u.email 
+//         FROM users u
+//         JOIN active_deposits ad ON u.email = ad.email
+//         WHERE ad.investment_end_date > NOW()`; // Active investments (from active_deposits table)
+//             } else if (group.startsWith('specificPlan:')) {
+//                 const planName = group.split(':')[1];
+//                 query = `
+//                     SELECT u.email 
+//                     FROM users u
+//                     JOIN active_deposits ad ON u.email = ad.email
+//                     WHERE ad.plan_name = ?`;
+//                 const [result] = await db.query(query, [planName]);
+//                 users.push(...result.map(user => user.email));
+//                 continue;
+//             }
+            
+
+//             const [result] = await db.query(query);
+//             users.push(...result.map(user => user.email));
+//         }
+
+//         // Remove duplicate emails
+//         const uniqueEmails = [...new Set(users)];
+
+//         // Send email to each user
+//         for (const email of uniqueEmails) {
+//             await sendEmail(email, subject, content);
+//         }
+
+//         res.status(200).json({ message: 'Newsletter sent successfully' });
+//     } catch (error) {
+//         console.error('Error sending newsletter:', error);
+//         res.status(500).json({ message: 'Failed to send the newsletter' });
+//     }
+// });
 
 
 
