@@ -128,7 +128,7 @@ button:hover {
 
 .deposit-action button{
     padding: 5px 20px;
-    background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));
+    background: linear-gradient(to right, #f8a632, rgb(255, 205, 136), rgb(255, 166, 42));
     color: rgb(0, 0, 0);
     border: none;
     border-radius: 5px;
