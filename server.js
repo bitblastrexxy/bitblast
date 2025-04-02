@@ -443,9 +443,18 @@ const checkInvestmentEnd = async () => {
         for (const deposit of activeDeposits) {
             const { amount, profit, email, plan_name, investment_start_date, investment_end_date, id } = deposit;
 
-            // Calculate the interest based on the profit percentage
-            const interestAmount = amount * (profit / 100);
-            console.log(`Interest calculated for deposit ${id}: ${interestAmount}`);
+            // Validate that amount and profit are valid numbers
+            const amountAsNumber = parseFloat(amount);
+            const profitAsNumber = parseFloat(profit);
+
+            if (isNaN(amountAsNumber) || isNaN(profitAsNumber)) {
+                console.error(`Invalid amount or profit for deposit ${id}. Skipping this deposit.`);
+                continue; // Skip this deposit if the amount or profit is invalid
+            }
+
+            // Use the already stored profit directly instead of recalculating the interest
+            const interestAmount = profitAsNumber; // Use the profit already stored in the database
+            console.log(`Interest retrieved for deposit ${id}: ${interestAmount}`);
 
             // Get the user's current balance from the database using their email
             const [userBalance] = await db.query(
@@ -459,9 +468,13 @@ const checkInvestmentEnd = async () => {
                 continue; // Skip this deposit and continue with the next one
             }
 
-            // Convert amount to a number (if it's a string) to ensure correct mathematical operations
-            const amountAsNumber = parseFloat(amount); // Convert string to number if needed
+            // Convert old balance to a number (if it's a string) to ensure correct mathematical operations
             const oldBalance = parseFloat(userBalance[0].balance); // Ensure old balance is a number
+
+            if (isNaN(oldBalance)) {
+                console.error(`Invalid balance for user ${email}. Skipping this deposit.`);
+                continue; // Skip this deposit if the old balance is invalid
+            }
 
             // Calculate the new balance (capital + interest)
             const newBalance = oldBalance + amountAsNumber + interestAmount;
@@ -489,6 +502,7 @@ const checkInvestmentEnd = async () => {
             await db.query(
                 `INSERT INTO completed_deposits (email, amount, interest, plan_name, investment_start_date, investment_end_date, date_completed)
                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
+
                 [email, amountAsNumber, interestAmount, plan_name, investment_start_date, investment_end_date, now]
             );
 
@@ -927,42 +941,6 @@ router.post('/webhook', async (req, res) => {
 
 
 
-
-// app.post('/verify-payment', async (req, res) => {
-//     const { reference, amount } = req.body;
-//     const paystackSecretKey = 'sk_live_9531183b8354a342dbe10d01e3abee48e6d9f07e';  // replace with your live secret key
-  
-//     try {
-//       const response = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
-//         headers: {
-//           Authorization: `Bearer ${paystackSecretKey}`
-//         }
-//       });
-  
-//       const paymentData = response.data.data;
-  
-//       if (paymentData && paymentData.status === 'success' && paymentData.amount / 100 === amount && paymentData.currency === 'USD') {
-//         // Successful payment in USD
-//         return res.json({ success: true, message: 'Payment verified successfully.' });
-//       } else {
-//         return res.json({ success: false, message: 'Payment verification failed.' });
-//       }
-//     } catch (error) {
-//       console.error(error);
-//       res.status(500).json({ success: false, message: 'Server error during payment verification.' });
-//     }
-//   });
-  
-
-
-
-
-
-
-
-//admin
-
-
 // Route to get the count of pending deposits
 app.get('/api/admin/pending-deposits', async (req, res) => {
     try {
@@ -1275,38 +1253,29 @@ app.post('/api/admin/add-funds', async (req, res) => {
     }
 
     try {
-        // Validate the admin password
         const adminPassword = process.env.ADMIN_PASSWORD;
         if (authPassword !== adminPassword) {
             return res.status(403).json({ message: 'Invalid admin password' });
         }
 
-        // Fetch user details using email
         const [rows] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
         if (rows.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
         const user = rows[0];
 
-        // Process the action (bonus or investment)
         if (actionType === 'bonus') {
-            // Add bonus to user balance
             await db.execute('UPDATE users SET balance = balance + ? WHERE email = ?', [amount, email]);
-            
-            // Insert transaction log for the bonus
             await db.execute(
                 'INSERT INTO transactions (email, plan_name, plan_credit_amount, deposit_method, transaction_date) VALUES (?, ?, ?, ?, ?)',
                 [email, null, amount, 'Bonus', new Date()]
             );
-
             res.json({ message: `Added ${amount} as bonus to ${user.email}` });
-
         } else if (actionType === 'investment') {
             if (!planId) {
                 return res.status(400).json({ message: 'Plan ID is required for investment' });
             }
 
-            // Fetch investment plan details
             let planDetails;
             try {
                 planDetails = getPlanDetails(planId);
@@ -1315,39 +1284,43 @@ app.post('/api/admin/add-funds', async (req, res) => {
                 return res.status(404).json({ message: 'Investment plan not found' });
             }
 
-            const { name: plan_name, duration } = planDetails; // duration is in hours
+            const { name: plan_name, duration } = planDetails;
+            const startDate = new Date();
+            const endDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
 
-            // Calculate start_date and end_date
-            const startDate = new Date(); // Current server time
-            const endDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000); // Add duration in hours
+            const planInterestRates = {
+                '10-RIO-AFTER-24-HOURS': 0.10,
+                '20-RIO-AFTER-72-HOURS': 0.20,
+                '50% RIO AFTER 1 WEEK': 0.50,
+                '100-RIO-AFTER-14-DAYS': 1.00
+            };
 
-            // Insert investment record into active_deposits
+            const interestRate = planInterestRates[plan_name] || 0;
+            const profit = amount * interestRate;
+            const totalReturn = amount + profit;
+
             await db.execute(
-                `INSERT INTO active_deposits (email, plan_name, amount, investment_start_date, investment_end_date) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [email, plan_name, amount, startDate, endDate]
+                `INSERT INTO active_deposits (email, plan_name, amount, investment_start_date, investment_end_date, interest, profit) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [email, plan_name, amount, startDate, endDate, totalReturn, profit]
             );
 
-            // Insert transaction log for the investment
             await db.execute(
-                `INSERT INTO transactions (email, plan_name, plan_credit_amount, deposit_method, transaction_date) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [email, plan_name, amount, 'Investment', startDate]
+                `INSERT INTO transactions (email, plan_name, plan_principle_return, plan_credit_amount, plan_deposit_fee, plan_debit_amount, deposit_method, transaction_date) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [email, plan_name, amount, totalReturn, 0, amount, 'Inserted-Investment', startDate]
             );
 
-            res.json({ message: `Added ${amount} as investment to ${user.full_name}` });
-
+            res.json({ message: `Added ${amount} as investment to ${user.full_name} with an expected return of ${totalReturn}` });
         } else {
             res.status(400).json({ message: 'Invalid action type' });
         }
-
     } catch (error) {
         console.error('Error adding funds:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
 
-// Helper function to get investment plan details
 function getPlanDetails(planId) {
     const plans = {
         1: { name: '10-RIO-AFTER-24-HOURS', duration: 24 },
@@ -1399,11 +1372,6 @@ app.post('/api/admin/add-penalty', async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 });
-
-
-
-
-
 
   
 
@@ -1549,64 +1517,6 @@ app.post('/api/admin/send-newsletter', async (req, res) => {
 });
 
 
-
-// Handle the newsletter send request
-// app.post('/api/admin/send-newsletter', async (req, res) => {
-//     const { subject, content, targetGroups } = req.body;
-
-//     try {
-//         const users = [];
-//         let query = '';
-
-//         for (const group of targetGroups) {
-//             if (group === 'allUsers') {
-//                 query = 'SELECT email FROM users'; // Fetch all users' emails
-//             } else if (group === 'noInvestments') {
-//                 query = `SELECT email FROM users WHERE id NOT IN 
-//                          (SELECT user_id FROM investments)`; // Users with no investments
-//             } else if (group === 'zeroBalance') {
-//                 query = 'SELECT email FROM users WHERE balance = 0'; // Users with zero balance
-//             } else if (group === 'activeInvestments') {
-//                 // Fetch users with active deposits from the active_deposits table
-//                 query = `
-//         SELECT u.email 
-//         FROM users u
-//         JOIN active_deposits ad ON u.email = ad.email
-//         WHERE ad.investment_end_date > NOW()`; // Active investments (from active_deposits table)
-//             } else if (group.startsWith('specificPlan:')) {
-//                 const planName = group.split(':')[1];
-//                 query = `
-//                     SELECT u.email 
-//                     FROM users u
-//                     JOIN active_deposits ad ON u.email = ad.email
-//                     WHERE ad.plan_name = ?`;
-//                 const [result] = await db.query(query, [planName]);
-//                 users.push(...result.map(user => user.email));
-//                 continue;
-//             }
-            
-
-//             const [result] = await db.query(query);
-//             users.push(...result.map(user => user.email));
-//         }
-
-//         // Remove duplicate emails
-//         const uniqueEmails = [...new Set(users)];
-
-//         // Send email to each user
-//         for (const email of uniqueEmails) {
-//             await sendEmail(email, subject, content);
-//         }
-
-//         res.status(200).json({ message: 'Newsletter sent successfully' });
-//     } catch (error) {
-//         console.error('Error sending newsletter:', error);
-//         res.status(500).json({ message: 'Failed to send the newsletter' });
-//     }
-// });
-
-
-
   // Adjusted route
 app.get('/api/expiring-deposits', async (req, res) => {
     try {
@@ -1623,97 +1533,6 @@ app.get('/api/expiring-deposits', async (req, res) => {
 });
 
   
-
-
-
-
-//   app.get('/get-account-details', (req, res) => {
-//     const username = req.query.username;
-  
-//     if (!username) {
-//         return res.json({ success: false, message: "Username is required." });
-//     }
-  
-//     // Get a connection from the pool
-//     pool.getConnection((err, connection) => {
-//         if (err) {
-//             return res.json({ success: false, message: "Error connecting to the database." });
-//         }
-  
-//         // Query user data based on the username to get user_id
-//         const userQuery = `SELECT id, full_name, username, created_at, balance FROM users WHERE username = ?`;
-//         connection.query(userQuery, [username], (err, userResults) => {
-//             if (err) {
-//                 connection.release(); // Release connection back to the pool
-//                 return res.json({ success: false, message: "Error fetching user data." });
-//             }
-  
-//             if (userResults.length === 0) {
-//                 connection.release(); // Release connection back to the pool
-//                 return res.json({ success: false, message: "User not found." });
-//             }
-  
-//             const user = userResults[0];
-//             const userId = user.id;
-  
-//             // Query approved deposits using user_id
-//             const approvedDepositsQuery = `SELECT amount, date FROM deposits WHERE user_id = ? AND status = 'approved'`;
-//             connection.query(approvedDepositsQuery, [userId], (err, approvedDeposits) => {
-//                 if (err) {
-//                     connection.release(); // Release connection back to the pool
-//                     return res.json({ success: false, message: "Error fetching approved deposits." });
-//                 }
-  
-//                 // Query pending deposits using user_id
-//                 const pendingDepositsQuery = `SELECT amount, date FROM deposits WHERE user_id = ? AND status = 'pending'`;
-//                 connection.query(pendingDepositsQuery, [userId], (err, pendingDeposits) => {
-//                     connection.release(); // Release connection after the last query
-  
-//                     if (err) {
-//                         return res.json({ success: false, message: "Error fetching pending deposits." });
-//                     }
-  
-//                     // Return account details, approved deposits, and pending deposits
-//                     res.json({
-//                         success: true,
-//                         full_name: user.full_name,
-//                         username: user.username,
-//                         created_at: user.created_at,
-//                         balance: user.balance,
-//                         approvedDeposits: approvedDeposits,
-//                         pendingDeposits: pendingDeposits
-//                     });
-//                 });
-//             });
-//         });
-//     });
-//   });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 app.use((req, res, next) => {
     req.setTimeout(500000);  // Adjust as necessary (in milliseconds)
     next();
