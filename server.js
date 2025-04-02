@@ -1015,8 +1015,7 @@ router.post('/api/admin/pending-deposits/approve/:id', async (req, res) => {
 
 
 
-
-// Reject a deposit
+// Reject a deposit with conditional refund
 app.post('/api/admin/reject-deposit', async (req, res) => {
     const { depositId } = req.body;
 
@@ -1027,15 +1026,34 @@ app.post('/api/admin/reject-deposit', async (req, res) => {
             return res.status(404).json({ message: 'Deposit not found' });
         }
 
-        // Step 2: Move deposit to rejected_deposits
+        const { email, amount, status, date, deposit_method, plan_credit_amount } = depositResult[0];
+
+        // Step 2: Conditionally refund user if deposit was from balance
+        if (deposit_method === 'balance') {
+            // Get user balance
+            const [userBalanceResult] = await db.query('SELECT balance FROM users WHERE email = ?', [email]);
+            if (!userBalanceResult.length) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const oldBalance = parseFloat(userBalanceResult[0].balance);
+            const refundAmount = parseFloat(plan_credit_amount);
+            const newBalance = oldBalance + refundAmount;
+
+            // Update user balance
+            await db.query('UPDATE users SET balance = ? WHERE email = ?', [newBalance, email]);
+
+            console.log(`Refunded ${refundAmount} to user ${email}. New balance: ${newBalance}`);
+        }
+
+        // Step 3: Move deposit to rejected_deposits
         await db.query(
-            `INSERT INTO rejected_deposits 
-             (id, email, amount, status, date) 
-             SELECT id, email, amount, status, date FROM deposits WHERE id = ?`,
-            [depositId]
+            `INSERT INTO rejected_deposits (id, email, amount, status, date) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [depositId, email, amount, status, date]
         );
 
-        // Step 3: Delete deposit from deposits table
+        // Step 4: Delete deposit from deposits table
         await db.query('DELETE FROM deposits WHERE id = ?', [depositId]);
 
         res.json({ message: 'Deposit rejected successfully' });
@@ -1044,6 +1062,37 @@ app.post('/api/admin/reject-deposit', async (req, res) => {
         res.status(500).json({ message: 'Error rejecting deposit' });
     }
 });
+
+
+
+// // Reject a deposit
+// app.post('/api/admin/reject-deposit', async (req, res) => {
+//     const { depositId } = req.body;
+
+//     try {
+//         // Step 1: Check if deposit exists
+//         const [depositResult] = await db.query('SELECT * FROM deposits WHERE id = ?', [depositId]);
+//         if (!depositResult.length) {
+//             return res.status(404).json({ message: 'Deposit not found' });
+//         }
+
+//         // Step 2: Move deposit to rejected_deposits
+//         await db.query(
+//             `INSERT INTO rejected_deposits 
+//              (id, email, amount, status, date) 
+//              SELECT id, email, amount, status, date FROM deposits WHERE id = ?`,
+//             [depositId]
+//         );
+
+//         // Step 3: Delete deposit from deposits table
+//         await db.query('DELETE FROM deposits WHERE id = ?', [depositId]);
+
+//         res.json({ message: 'Deposit rejected successfully' });
+//     } catch (error) {
+//         console.error('Error rejecting deposit:', error);
+//         res.status(500).json({ message: 'Error rejecting deposit' });
+//     }
+// });
 
 
 
