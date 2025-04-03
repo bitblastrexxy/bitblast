@@ -359,10 +359,10 @@ app.post('/api/deposit', async (req, res) => {
 
         // Calculate investment end date based on plan
         const planEndTimes = {
-            '20% RIO AFTER 24 HOURS': 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+            '20% RIO AFTER 48 HOURS': 48 * 60 * 60 * 1000, // 24 hours in milliseconds
             '50% RIO AFTER 72 HOURS': 72 * 60 * 60 * 1000, // 72 hours in milliseconds
-            '100% RIO LONG TERM': 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-            '200% RIO AFTER 14 DAYS': 14 * 24 * 60 * 60 * 1000 // 14 days in milliseconds
+            '100% RIO AFTER 96 HOURS': 4 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+            '200% RIO AFTER 120 HOURS': 5 * 24 * 60 * 60 * 1000 // 14 days in milliseconds
         };
 
         const investmentStartDate = new Date();
@@ -1374,8 +1374,8 @@ function getPlanDetails(planId) {
     const plans = {
         1: { name: '20-RIO-AFTER-24-HOURS', duration: 24 },
         2: { name: '50-RIO-AFTER-72-HOURS', duration: 72 },
-        3: { name: '100% RIO AFTER 1 WEEK', duration: 168 },
-        4: { name: '200-RIO-AFTER-14-DAYS', duration: 336 }
+        3: { name: '100% RIO AFTER 1 WEEK', duration: 96 },
+        4: { name: '200-RIO-AFTER-14-DAYS', duration: 120 }
     };
     return plans[planId] || { name: 'Unknown Plan', duration: 0 };
 }

@@ -27,8 +27,8 @@
                   <div class="tab1">
                     <div class="tab" data-plan="plan-1" data-index="0" style=" background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));"> 
                       <input type="radio" name="plan" id="plan-1-radio" value="plan-1">
-                      <h2>20% RIO AFTER 24 HOURS</h2>
-                      <P class="range">$20-$49.99
+                      <h2>20% RIO AFTER 48 HOURS</h2>
+                      <P class="range">$50-$99.99
 
                       </P> 
                      
@@ -38,21 +38,21 @@
                     <div class="tab" data-plan="plan-2" data-index="1" style=" background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));">
                       <input type="radio" name="plan" id="plan-2-radio" value="plan-2" >
                       <h2>50% RIO 72 HOURS</h2>
-                      <P class="range">$50 - $99.99</P> 
+                      <P class="range">$100 - $499.99</P> 
                       <!-- <button>Calculate</button>                        -->
                     </div>
                   </div>
                   <div class="tab1">
                     <div class="tab" data-plan="plan-3" data-index="2" style=" background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));">
                       <input type="radio" name="plan" id="plan-3-radio" value="plan-3">
-                      <h2>100% RIO AFTER 1 WEEK</h2>
-                      <P class="range">$100 - $499.99</P> 
+                      <h2>100% RIO AFTER 96 HOURS</h2>
+                      <P class="range">$500 - $4999.99</P> 
                       <!-- <button>Calculate</button>                        -->
                     </div>
                     <div class="tab"  data-plan="plan-4" data-index="3" style=" background: linear-gradient(to right, rgb(248, 166, 50), rgb(255, 205, 136), rgb(255, 166, 42));">
                       <input type="radio" name="plan" id="plan-4-radio" value="plan-4">
-                      <h2>200% RIO AFTER 14 DAYS</h2>
-                      <P class="range">$500 - Infinity</P> 
+                      <h2>200% RIO AFTER 120 HOURS</h2>
+                      <P class="range">$5000 - Infinity</P> 
                      
                     </div>
                   </div>
@@ -127,15 +127,15 @@
       // Plan details with deposit limits
       const planDetails = [
         {
-          name: '20% RIO AFTER 24 HOURS',
+          name: '20% RIO AFTER 48 HOURS',
           profit: '20%',
           principleReturn: 'Yes',
           creditAmount: '',
           depositFee: '0.00',
           debitAmount: '',
-          period: '1 days',
-          minDeposit: 20,
-          maxDeposit: 49.99
+          period: '2 days',
+          minDeposit: 50,
+          maxDeposit: 99.99
         },
         {
           name: '50% RIO AFTER 72 HOURS',
@@ -145,28 +145,28 @@
           depositFee: '0.00',
           debitAmount: '',
           period: '3 days',
-          minDeposit: 50,
-          maxDeposit: 99.99
+          minDeposit: 100,
+          maxDeposit: 499.99
         },
         {
-          name: '100% RIO AFTER 1 WEEK',
+          name: '100% RIO AFTER 96 HOURS',
           profit: '100%',
           principleReturn: 'Yes',
           creditAmount: '',
           depositFee: '0.00',
           debitAmount: '',
-          period: '7 days',
+          period: '4 days',
           minDeposit: 100,
           maxDeposit: 499.99
         },
         {
-          name: '200% RIO AFTER 14 DAYS',
+          name: '200% RIO AFTER 120 HOURS',
           profit: '200%',
           principleReturn: 'Yes',
           creditAmount: '',
           depositFee: '0.00',
           debitAmount: '',
-          period: '14 days',
+          period: '5 days',
           minDeposit: 500,
           maxDeposit: 5000000
         },
