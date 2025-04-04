@@ -188,41 +188,12 @@
     </div>
 
 
-
-     <!-- TradingView Widget BEGIN -->
-     <section id="market-cap" class="market-section"  style="text-align: center;">
-        <h2 style="color: rgb(255, 166, 42);" >Real-Time Crypto/Stock Market</h2>
-        <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget" style="height:calc(100% - 100px);width:100%"></div>
-            <div class="tradingview-widget-copyright">
-                <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
-                    <span class="blue-text">Track all markets</span>
-                </a>
-            </div>
-            
+    <div class="transaction-container">
+        <div class="transaction-header">Recent Transactions</div>
+        <div class="transaction-list" id="transactionList">
+          <!-- Transactions will appear here -->
         </div>
-
-        <!-- <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-            {
-                "width": "100%",
-                "height": "500",
-                "autosize": true,
-                "symbol": "BINANCE:BTCUSDT",
-                "interval": "60",
-                "timezone": "America/New_York",
-                "theme": "light",
-                "style": "1",
-                "locale": "en",
-                "withdateranges": true,
-                "allow_symbol_change": true,
-                "calendar": false,
-                "studies": [
-                    "STD;24h%Volume"
-                ],
-                "support_host": "https://www.tradingview.com"
-            }
-            </script> -->
-    </section>
+      </div>
 
     <nav class="bottom-nav">
         <ul class="nav-links">
@@ -346,6 +317,59 @@ closeOverlayButton.addEventListener('click', function() {
     depositOverlay.classList.remove('show');  // Remove the 'show' class
     console.log('Overlay should slide out of view now'); // Debugging
 });
+
+
+
+const transactions = [
+      { name: "Rexxy A.", amount: "$200", time: "Just now" },
+      { name: "Samantha T.", amount: "$340", time: "1 min ago" },
+      { name: "Michael D.", amount: "$90", time: "3 mins ago" },
+      { name: "Blessing K.", amount: "$150", time: "5 mins ago" },
+      { name: "Daniel Z.", amount: "$75", time: "7 mins ago" },
+      { name: "Fatima O.", amount: "$120", time: "10 mins ago" },
+      { name: "Chris N.", amount: "$250", time: "12 mins ago" },
+      { name: "Jane B.", amount: "$80", time: "15 mins ago" },
+      { name: "Ola M.", amount: "$180", time: "18 mins ago" },
+      { name: "Kelvin U.", amount: "$60", time: "20 mins ago" },
+      { name: "Grace E.", amount: "$130", time: "22 mins ago" },
+      { name: "Emeka F.", amount: "$300", time: "25 mins ago" },
+      { name: "Sandra W.", amount: "$95", time: "28 mins ago" },
+      { name: "Jide H.", amount: "$215", time: "30 mins ago" },
+      { name: "Rose L.", amount: "$170", time: "33 mins ago" },
+      { name: "Michael D.", amount: "$90", time: "3 mins ago" },
+      { name: "Blessing K.", amount: "$150", time: "5 mins ago" },
+      { name: "Daniel Z.", amount: "$75", time: "7 mins ago" },
+      { name: "Fatima O.", amount: "$120", time: "10 mins ago" },
+      { name: "Chris N.", amount: "$250", time: "12 mins ago" },
+      { name: "Jane B.", amount: "$80", time: "15 mins ago" },
+      { name: "Ola M.", amount: "$180", time: "18 mins ago" },
+      { name: "Kelvin U.", amount: "$60", time: "20 mins ago" },
+      { name: "Grace E.", amount: "$130", time: "22 mins ago" },
+      { name: "Emeka F.", amount: "$300", time: "25 mins ago" },
+      { name: "Sandra W.", amount: "$95", time: "28 mins ago" },
+      { name: "Jide H.", amount: "$215", time: "30 mins ago" },
+      { name: "Rose L.", amount: "$170", time: "33 mins ago" },
+    ];
+
+    const list = document.getElementById("transactionList");
+    let index = 0;
+
+    function showTransactions() {
+      list.innerHTML = "";
+
+      for (let i = 0; i < 5; i++) {
+        const t = transactions[(index + i) % transactions.length];
+        const item = document.createElement("div");
+        item.className = "transaction-item";
+        item.innerHTML = `<span>${t.name}</span><span>${t.amount}</span><span style="font-size: 0.85em; color: #888;">${t.time}</span>`;
+        list.appendChild(item);
+      }
+
+      index = (index + 1) % transactions.length;
+    }
+
+    showTransactions();
+    setInterval(showTransactions, 3000); // change every 3 secs
 </script>
 </body>
 </html>
