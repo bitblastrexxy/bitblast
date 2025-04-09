@@ -434,18 +434,18 @@ const checkInvestmentEnd = async () => {
 
         // Retrieve active deposits where the investment end date has passed
         const [activeDeposits] = await db.query(
-            `SELECT id, email, amount, profit, plan_name, investment_start_date, investment_end_date 
+            `SELECT id, email, amount, interest, plan_name, investment_start_date, investment_end_date 
              FROM active_deposits 
              WHERE investment_end_date <= ?`,
             [now]
         );
 
         for (const deposit of activeDeposits) {
-            const { amount, profit, email, plan_name, investment_start_date, investment_end_date, id } = deposit;
+            const { amount, interest, email, plan_name, investment_start_date, investment_end_date, id } = deposit;
 
             // Validate that amount and profit are valid numbers
             const amountAsNumber = parseFloat(amount);
-            const profitAsNumber = parseFloat(profit);
+            const profitAsNumber = parseFloat(interest);
 
             if (isNaN(amountAsNumber) || isNaN(profitAsNumber)) {
                 console.error(`Invalid amount or profit for deposit ${id}. Skipping this deposit.`);
